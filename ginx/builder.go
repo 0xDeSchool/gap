@@ -6,17 +6,18 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type ServerBuiler struct {
-	App     *app.AppBuilder
+type ServerBuilder struct {
 	preRuns []ServerConfigureFunc
 	initors []ServerConfigureFunc
+
+	App     *app.AppBuilder
 	Options *ServerOptions
 	// 只在程序启动过程中进行操作，以保证协程安全
 	Items map[string]any
 }
 
-func NewServerBuilder(builder *app.AppBuilder) *ServerBuiler {
-	return &ServerBuiler{
+func NewServerBuilder(builder *app.AppBuilder) *ServerBuilder {
+	return &ServerBuilder{
 		App:     builder,
 		preRuns: make([]ServerConfigureFunc, 0),
 		initors: make([]ServerConfigureFunc, 0),
@@ -28,23 +29,23 @@ func NewServerBuilder(builder *app.AppBuilder) *ServerBuiler {
 }
 
 // PreConfigure 配置服务，该方法参数在App.Run中、gin.Run之前运行
-func (b *ServerBuiler) PreConfigure(action ServerConfigureFunc) *ServerBuiler {
+func (b *ServerBuilder) PreConfigure(action ServerConfigureFunc) *ServerBuilder {
 	b.preRuns = append(b.preRuns, action)
 	return b
 }
 
 // Configure 配置服务，该方法参数在App.Run中、gin.Run之前运行
-func (b *ServerBuiler) Configure(action ServerConfigureFunc) *ServerBuiler {
+func (b *ServerBuilder) Configure(action ServerConfigureFunc) *ServerBuilder {
 	b.initors = append(b.initors, action)
 	return b
 }
 
-func (b *ServerBuiler) Add(fun func(b *ServerBuiler)) *ServerBuiler {
+func (b *ServerBuilder) Add(fun func(b *ServerBuilder)) *ServerBuilder {
 	fun(b)
 	return b
 }
 
-func (b *ServerBuiler) Build() (*Server, error) {
+func (b *ServerBuilder) Build() (*Server, error) {
 	g := gin.Default()
 	server := NewServer(g, b.Options)
 	for _, action := range b.preRuns {

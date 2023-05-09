@@ -52,7 +52,7 @@ const (
 )
 
 // 添加jwt
-func AddJwt(builder *ServerBuiler, configure func(*jwt.GinJWTMiddleware)) {
+func AddJwt(builder *ServerBuilder, configure func(*jwt.GinJWTMiddleware)) {
 	authMidd := AuthHandlerFunc(builder)
 	if authMidd != nil {
 		return
@@ -81,7 +81,7 @@ func AddJwt(builder *ServerBuiler, configure func(*jwt.GinJWTMiddleware)) {
 }
 
 // 获取认证中间件handler
-func AuthHandlerFunc(buidler *ServerBuiler) gin.HandlerFunc {
+func AuthHandlerFunc(buidler *ServerBuilder) gin.HandlerFunc {
 	m, ok := buidler.Items["JwtAuthMiddleware"]
 	if !ok {
 		return nil
@@ -94,7 +94,7 @@ func AuthHandlerFunc(buidler *ServerBuiler) gin.HandlerFunc {
 }
 
 // 支持匿名和用户登录两种访问方式
-func OptionalAuthHandlerFunc(buidler *ServerBuiler) gin.HandlerFunc {
+func OptionalAuthHandlerFunc(buidler *ServerBuilder) gin.HandlerFunc {
 	m, ok := buidler.Items["JwtAuthMiddleware"]
 	if !ok {
 		return nil
