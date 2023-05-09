@@ -51,16 +51,38 @@ const (
 	ClaimUserAddr = "addr"
 )
 
+type JWTBuilder struct {
+	sb  *ServerBuilder
+	mid *jwt.GinJWTMiddleware
+}
+
+func UseRestRoutes(cfg func(*jwt.GinJWTMiddleware)) {
+
+}
+
 // 添加jwt
-func AddJwt(builder *ServerBuilder, configure func(*jwt.GinJWTMiddleware)) {
-	authMidd := AuthHandlerFunc(builder)
-	if authMidd != nil {
-		return
+func AddJwt(builder *ServerBuilder, configure func(*jwt.GinJWTMiddleware)) *JWTBuilder {
+	authMid := AuthHandlerFunc(builder)
+	if authMid != nil {
+		return nil
 	}
 	authMiddleware, err := NewJwtMiddleware(configure)
+	jwt := &JWTBuilder{
+		sb:  builder,
+		mid: authMiddleware,
+	}
 	errx.CheckError(err)
 	builder.Items["JwtAuthMiddleware"] = authMiddleware
-	builder.PreConfigure(func(s *Server) error {
+	builder.App.ConfigureServices(func() error {
+		app.AddValue(authMiddleware)
+		return nil
+	})
+	return jwt
+}
+
+func (sb *ServerBuilder) UseRestRoutes() {
+	authMiddleware := sb.Items["JwtAuthMiddleware"].(*jwt.GinJWTMiddleware)
+	sb.PreConfigure(func(s *Server) error {
 		// 登录接口，验证签名
 		s.G.POST("/api/login", authMiddleware.LoginHandler)
 		// 登出接口
@@ -72,10 +94,6 @@ func AddJwt(builder *ServerBuilder, configure func(*jwt.GinJWTMiddleware)) {
 		s.G.NoRoute(func(c *gin.Context) {
 			NotFound(c)
 		})
-		return nil
-	})
-	builder.App.ConfigureServices(func() error {
-		app.AddValue(authMiddleware)
 		return nil
 	})
 }
