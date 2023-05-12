@@ -99,8 +99,8 @@ func (sb *ServerBuilder) UseRestRoutes() {
 }
 
 // 获取认证中间件handler
-func AuthHandlerFunc(buidler *ServerBuilder) gin.HandlerFunc {
-	m, ok := buidler.Items["JwtAuthMiddleware"]
+func AuthHandlerFunc(builder *ServerBuilder) gin.HandlerFunc {
+	m, ok := builder.Items["JwtAuthMiddleware"]
 	if !ok {
 		return nil
 	}
@@ -112,8 +112,8 @@ func AuthHandlerFunc(buidler *ServerBuilder) gin.HandlerFunc {
 }
 
 // 支持匿名和用户登录两种访问方式
-func OptionalAuthHandlerFunc(buidler *ServerBuilder) gin.HandlerFunc {
-	m, ok := buidler.Items["JwtAuthMiddleware"]
+func OptionalAuthHandlerFunc(builder *ServerBuilder) gin.HandlerFunc {
+	m, ok := builder.Items["JwtAuthMiddleware"]
 	if !ok {
 		return nil
 	}
