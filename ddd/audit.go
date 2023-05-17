@@ -17,7 +17,7 @@ type UpdationAuditedEntity interface {
 	Updating(ctx context.Context)
 }
 
-type DeletionAuditedEntity interface {
+type ISoftDeleteEntity interface {
 	Entity
 	Deleting(ctx context.Context)
 }

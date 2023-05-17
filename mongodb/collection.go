@@ -30,187 +30,178 @@ func NewCollection[TEntity any](c *mongo.Collection, opts *store.StoreOptions) *
 	}
 }
 
-func (c *Collection[TEntity]) Find(ctx context.Context, filter bson.D, opts ...*options.FindOptions) []TEntity {
-	filter = c.setSoftDeleteFilter(filter)
-	filter = c.MergeGlobalFilter(ctx, filter)
+func (c *Collection[TEntity]) Find(ctx context.Context, filter bson.D, opts ...*options.FindOptions) ([]TEntity, error) {
+	filter = c.SetAllFilter(ctx, filter)
 	cur, err := c.Col().Find(ctx, filter, opts...)
-	errx.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 	data := make([]TEntity, 0)
-	errx.CheckError(cur.All(context.Background(), &data))
-	return data
+	err = cur.All(context.Background(), &data)
+	return data, err
 }
 
-func (c *Collection[TEntity]) FindOne(ctx context.Context, filter bson.D, opts ...*options.FindOneOptions) *TEntity {
-	filter = c.setSoftDeleteFilter(filter)
-	filter = c.MergeGlobalFilter(ctx, filter)
+func (c *Collection[TEntity]) FindByPage(ctx context.Context, filter bson.D, p *x.PageAndSort, opt *options.FindOptions) (*x.PagedResult[TEntity], error) {
+	result := &x.PagedResult[TEntity]{}
+	findOptions := options.Find()
+	if p != nil {
+		findOptions.SetLimit(p.Limit() + 1).SetSkip(p.Skip())
+		if p.IncludeTotal {
+			total, err := c.Count(ctx, filter)
+			if err != nil {
+				return nil, err
+			}
+			result.Total = total
+		}
+	}
+	data, err := c.Find(ctx, filter, findOptions, opt)
+	if err != nil {
+		return nil, err
+	}
+	if p != nil && len(data) > int(p.Limit()) {
+		data = data[:p.Limit()]
+		result.HasMore = true
+	}
+	return result, nil
+}
+
+func (c *Collection[TEntity]) FindOne(ctx context.Context, filter bson.D, opts ...*options.FindOneOptions) (*TEntity, error) {
+	filter = c.SetAllFilter(ctx, filter)
 	result := c.Col().FindOne(ctx, filter, opts...)
-	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-		errx.PanicNotFound("data not found")
-	} else {
-		errx.CheckError(result.Err())
+	err := result.Err()
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, errx.DataNotFoundError
+	} else if err != nil {
+		return nil, err
 	}
 	var v TEntity
-	err := result.Decode(&v)
-	errx.CheckError(err)
-	return &v
+	err = result.Decode(&v)
+	return &v, err
 }
 
-func (c *Collection[TEntity]) Get(ctx context.Context, id primitive.ObjectID) *TEntity {
-	errx.NotNil(id, "id")
-	filter := bson.D{{Key: "_id", Value: id}}
-	filter = c.MergeGlobalFilter(ctx, filter)
-	return c.FindOne(ctx, filter)
-}
-
-func (c *Collection[TEntity]) Count(ctx context.Context, filter bson.D, opts ...*options.CountOptions) int64 {
-	filter = c.setSoftDeleteFilter(filter)
-	filter = c.MergeGlobalFilter(ctx, filter)
-	totalCount, err := c.Col().CountDocuments(ctx, filter, opts...)
-	errx.CheckError(err)
-	return totalCount
-}
-
-func (c *Collection[TEntity]) GetMany(ctx context.Context, ids []primitive.ObjectID, filter bson.D) []TEntity {
-	errx.NotNil(ids, "ids")
+func (c *Collection[TEntity]) GetMany(ctx context.Context, ids []primitive.ObjectID) ([]TEntity, error) {
 	if len(ids) == 0 {
-		return make([]TEntity, 0)
+		return make([]TEntity, 0), nil
 	}
 	f := bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}}
-	if len(filter) > 0 {
-		f = append(f, filter...)
-	}
-	f = c.setSoftDeleteFilter(f)
-	f = c.MergeGlobalFilter(ctx, f)
-	result, err := c.Col().Find(ctx, f)
-	errx.CheckError(err)
-	data := make([]TEntity, 0)
-	err = result.All(context.Background(), &data)
-	errx.CheckError(err)
-	return data
+	return c.Find(ctx, f)
 }
 
-func (c *Collection[TEntity]) GetList(ctx context.Context, filter bson.D, p *x.PageParam, opt *options.FindOptions) ([]TEntity, int64) {
-	totalCount := c.Count(ctx, filter)
-	filter = c.MergeGlobalFilter(ctx, filter)
-	findOptions := options.Find().SetLimit(p.Limit()).SetSkip(p.Skip())
-	data := c.Find(ctx, filter, findOptions, opt)
-	return data, totalCount
+func (c *Collection[TEntity]) Count(ctx context.Context, filter bson.D, opts ...*options.CountOptions) (int64, error) {
+	filter = c.SetAllFilter(ctx, filter)
+	totalCount, err := c.Col().CountDocuments(ctx, filter, opts...)
+	return totalCount, err
 }
 
-func (c *Collection[TEntity]) Exists(ctx context.Context, id primitive.ObjectID) bool {
-	errx.NotNil(id, "id")
-	filter := c.setSoftDeleteFilter(bson.D{{Key: "_id", Value: id}})
-	filter = c.MergeGlobalFilter(ctx, filter)
-	var result TEntity
-	err := c.Col().FindOne(ctx, filter).Decode(&result)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return false
-		}
-		panic(err)
-	}
-	return true
-}
-
-func (c *Collection[TEntity]) Insert(ctx context.Context, entity *TEntity) primitive.ObjectID {
+func (c *Collection[TEntity]) Insert(ctx context.Context, entity *TEntity) (primitive.ObjectID, error) {
 	ddd.SetAudited(ctx, entity)
 	result, err := c.Col().InsertOne(ctx, entity)
-	errx.CheckError(err)
-	return result.InsertedID.(primitive.ObjectID)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	return result.InsertedID.(primitive.ObjectID), nil
 }
 
-func (c *Collection[TEntity]) InsertMany(ctx context.Context, entitis []TEntity, ignoreErr bool) []primitive.ObjectID {
+func (c *Collection[TEntity]) InsertMany(ctx context.Context, entitis []TEntity, ignoreErr bool) ([]primitive.ObjectID, error) {
 	if len(entitis) == 0 {
-		return make([]primitive.ObjectID, 0)
+		return make([]primitive.ObjectID, 0), nil
 	}
 	data := ddd.SetAuditedMany(ctx, entitis)
 	opts := options.InsertMany().SetOrdered(!ignoreErr)
 	result, err := c.Col().InsertMany(ctx, data, opts)
-	if !ignoreErr {
-		errx.CheckError(err)
-	} else {
-		log.Warn(err.Error())
+	if err != nil {
+		if !ignoreErr {
+			return nil, err
+		} else {
+			log.Warn("ignored mongodb insert many error: " + err.Error())
+		}
 	}
 	if result == nil {
-		return make([]primitive.ObjectID, 0)
+		return make([]primitive.ObjectID, 0), nil
 	}
-	return linq.Map(result.InsertedIDs, func(t *interface{}) primitive.ObjectID { return (*t).(primitive.ObjectID) })
+	ids := linq.Map(result.InsertedIDs, func(t *interface{}) primitive.ObjectID { return (*t).(primitive.ObjectID) })
+	return ids, nil
 }
 
-func (c *Collection[TEntity]) UpdateByID(ctx context.Context, id primitive.ObjectID, entity *TEntity) int {
-	ddd.SetAudited(ctx, entity)
-	result, err := c.Col().UpdateByID(ctx, id, bson.D{{Key: "$set", Value: entity}})
-	errx.CheckError(err)
-	return int(result.ModifiedCount)
-}
-
-func (c *Collection[TEntity]) UpdateOne(ctx context.Context, filter bson.D, entity *TEntity, opts ...*options.UpdateOptions) int {
-	filter = c.setSoftDeleteFilter(filter)
+func (c *Collection[TEntity]) UpdateOne(ctx context.Context, filter bson.D, entity *TEntity, opts ...*options.UpdateOptions) (int, error) {
+	filter = c.SetAllFilter(ctx, filter)
 	ddd.SetAudited(ctx, entity)
 	result, err := c.Col().UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: entity}}, opts...)
-	errx.CheckError(err)
-	return int(result.ModifiedCount)
-}
-
-func (c *Collection[TEntity]) Update(ctx context.Context, filter bson.D, update interface{}, opts ...*options.UpdateOptions) int {
-	filter = c.setSoftDeleteFilter(filter)
-	result, err := c.Col().UpdateMany(ctx, filter, update, opts...)
-	errx.CheckError(err)
-	return int(result.ModifiedCount)
-}
-
-func (c *Collection[TEntity]) Delete(ctx context.Context, id primitive.ObjectID) int {
-	var v any = (*TEntity)(nil)
-	if _, ok := v.(ddd.SoftDeleteEntity); ok {
-		e := c.Get(ctx, id)
-		var v any = e
-		softEntity := v.(ddd.DeletionAuditedEntity)
-		softEntity.Deleting(ctx)
-		return int(c.UpdateByID(ctx, id, e))
-	} else {
-		result, err := c.Col().DeleteOne(ctx, bson.D{{Key: "_id", Value: id}})
-		errx.CheckError(err)
-		return int(result.DeletedCount)
+	if err != nil {
+		return 0, err
 	}
+	return int(result.ModifiedCount), nil
 }
 
-func (c *Collection[TEntity]) DeleteMany(ctx context.Context, ids []primitive.ObjectID) int {
+func (c *Collection[TEntity]) UpdateMany(ctx context.Context, filter bson.D, update interface{}, opts ...*options.UpdateOptions) (int, error) {
+	filter = c.SetAllFilter(ctx, filter)
+	set := bson.D{{Key: "$set", Value: update}}
+	result, err := c.Col().UpdateMany(ctx, filter, set, opts...)
+	if err != nil {
+		return 0, err
+	}
+	return int(result.ModifiedCount), nil
+}
+
+func (c *Collection[TEntity]) DeleteOne(ctx context.Context, filter bson.D) (int, error) {
+	filter = c.SetAllFilter(ctx, filter)
 	var v any = (*TEntity)(nil)
-	if _, ok := v.(ddd.DeletionAuditedEntity); ok {
-		ctx := ginx.WithScopedUnitwork(ctx)
-		var count int = 0
-		for i := range ids {
-			e := c.Get(ctx, ids[i])
-			var v any = e
-			softEntity := v.(ddd.DeletionAuditedEntity)
-			softEntity.Deleting(ctx)
-			count += c.UpdateByID(ctx, ids[i], e)
+	if _, ok := v.(ddd.ISoftDeleteEntity); ok {
+		e, err := c.FindOne(ctx, filter)
+		if err != nil {
+			return 0, err
 		}
-		return int(count)
+		var se any = e
+		softEntity := se.(ddd.ISoftDeleteEntity)
+		softEntity.Deleting(ctx)
+		count, err := c.UpdateOne(ctx, filter, e)
+		if err != nil {
+			return 0, err
+		}
+		return count, nil
 	} else {
-		result, err := c.Col().DeleteMany(ctx, bson.D{{Key: "_id", Value: bson.M{"$in": ids}}})
-		errx.CheckError(err)
-		return int(result.DeletedCount)
+		result, err := c.Col().DeleteOne(ctx, filter)
+		if err != nil {
+			return 0, err
+		}
+		return int(result.DeletedCount), nil
 	}
 }
 
-func (c *Collection[TEntity]) DeleteByFilter(ctx context.Context, filter bson.D) int {
+func (c *Collection[TEntity]) DeleteMany(ctx context.Context, filter bson.D) (int, error) {
+	filter = c.SetAllFilter(ctx, filter)
 	var v any = (*TEntity)(nil)
-	if _, ok := v.(ddd.DeletionAuditedEntity); ok {
-		es := c.Find(ctx, filter, nil)
-		ctx := ginx.WithScopedUnitwork(ctx)
-		var count int = 0
+	if _, ok := v.(ddd.ISoftDeleteEntity); ok {
+		es, err := c.Find(ctx, filter, nil)
+		if err != nil {
+			return 0, err
+		}
+		uw := ginx.NewUnitWork(ctx)
+		uw.Start(ctx)
+		var count = 0
 		for i := range es {
 			var v any = &es[i]
-			softEntity := v.(ddd.DeletionAuditedEntity)
+			softEntity := v.(ddd.ISoftDeleteEntity)
 			softEntity.Deleting(ctx)
-			count += c.UpdateByID(ctx, softEntity.GetId(), &es[i])
+			idFilter := bson.D{{"_id", softEntity.GetId()}}
+			ct, err := c.UpdateOne(ctx, idFilter, &es[i])
+			if err != nil {
+				uw.Abort(ctx)
+				return 0, err
+			}
+			count += ct
 		}
-		return count
+		err = uw.Commit(ctx)
+		if err != nil {
+			return 0, err
+		}
+		return count, nil
 	} else {
 		result, err := c.Col().DeleteMany(ctx, filter)
-		errx.CheckError(err)
-		return int(result.DeletedCount)
+		if err != nil {
+			return 0, nil
+		}
+		return int(result.DeletedCount), nil
 	}
 }
 
@@ -226,6 +217,12 @@ func (c *Collection[TEntity]) Col() *mongo.Collection {
 	return c.c
 }
 
+func (c *Collection[TEntity]) SetAllFilter(ctx context.Context, filter bson.D) bson.D {
+	filter = c.MergeGlobalFilter(ctx, filter)
+	filter = c.setSoftDeleteFilter(filter)
+	return filter
+}
+
 func (c *Collection[TEntity]) MergeGlobalFilter(ctx context.Context, filter bson.D) bson.D {
 	dfs := store.DataFilters[TEntity](ctx, c.opts)
 	for _, v := range dfs {
@@ -239,7 +236,7 @@ func (c *Collection[TEntity]) MergeGlobalFilter(ctx context.Context, filter bson
 	return filter
 }
 
-func MergeGlobalFilter[T any](ctx context.Context, filter bson.D, opts *store.StoreOptions) bson.D {
+func MergeFilter[T any](ctx context.Context, filter bson.D, opts *store.StoreOptions) bson.D {
 	dfs := store.DataFilters[T](ctx, opts)
 	for _, v := range dfs {
 		df := v.Filter(ctx, filter)

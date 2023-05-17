@@ -4,27 +4,14 @@ type PageParam struct {
 	Page         int64 `json:"page"`         // 页码, 从1开始
 	PageSize     int64 `json:"pageSize"`     // 每页大小
 	IncludeTotal bool  `json:"includeTotal"` // 是否包含总数
-	offsetPlus   int64
-	skip         *int64
 }
 
 func (p *PageParam) Skip() int64 {
-	if p.skip != nil {
-		return *p.skip
-	}
 	return (p.Page - 1) * p.PageSize
 }
 
-func (p *PageParam) SetSkip(skip int64) {
-	p.skip = &skip
-}
-
-func (p *PageParam) SetLimitPlus(plus int64) {
-	p.offsetPlus = plus
-}
-
 func (p *PageParam) Limit() int64 {
-	return p.PageSize + p.offsetPlus
+	return p.PageSize
 }
 
 // NewPageParam new pageparam
@@ -43,10 +30,8 @@ type PageAndSort struct {
 func (p *PageAndSort) Copy() *PageAndSort {
 	return &PageAndSort{
 		PageParam: PageParam{
-			Page:       p.Page,
-			PageSize:   p.PageSize,
-			skip:       p.skip,
-			offsetPlus: p.offsetPlus,
+			Page:     p.Page,
+			PageSize: p.PageSize,
 		},
 		Sort: p.Sort,
 	}
@@ -75,4 +60,10 @@ func NewPageAndSort(page, pageSize int64, sort string) *PageAndSort {
 // is sorted by desc
 func (p *PageAndSort) IsDesc() bool {
 	return len(p.Sort) > 0 && p.Sort[0] == '-' || p.Sort[0] == '!'
+}
+
+type PagedResult[T any] struct {
+	Total   int64 `json:"total"`
+	Data    []T   `json:"data"`
+	HasMore bool  `json:"hasMore"`
 }

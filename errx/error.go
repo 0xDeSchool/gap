@@ -1,6 +1,7 @@
 package errx
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 
@@ -16,6 +17,10 @@ var (
 
 	// 未知原因参数不合法
 	ErrUnkownParameterUnvalid ErrCode = "unvalid"
+)
+
+var (
+	DataNotFoundError = errors.New("data not found")
 )
 
 type errorInfo struct {

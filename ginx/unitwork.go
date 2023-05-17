@@ -76,7 +76,7 @@ func UnitWorkMiddleware() gin.HandlerFunc {
 	}
 }
 
-// 使用默认的UnitWork，在当前请求周期中有效，自动提交事务
+// WithScopedUnitwork 使用默认的UnitWork，在当前请求周期中有效，自动提交事务
 func WithScopedUnitwork(ctx context.Context) context.Context {
 	v := ctx.Value(UnitWorkKey)
 	if v != nil {
@@ -84,6 +84,14 @@ func WithScopedUnitwork(ctx context.Context) context.Context {
 		return uwm.Default().Start(ctx)
 	} else {
 		panic(errors.New("context has no unitwork instance"))
+	}
+}
+
+func AbortScopedUnitWork(ctx context.Context) {
+	v := ctx.Value(UnitWorkKey)
+	if v != nil {
+		uwm := v.(*unitWorkManager)
+		uwm.Default().Abort(ctx)
 	}
 }
 
