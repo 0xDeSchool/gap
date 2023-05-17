@@ -9,7 +9,7 @@ import (
 )
 
 type RepositoryBase[TEntity any] interface {
-	GetPagedList(ctx context.Context, p *x.PageAndSort) (*PagedResult[TEntity], error)
+	GetPagedList(ctx context.Context, p *x.PageAndSort) (*x.PagedResult[TEntity], error)
 	GetById(ctx context.Context, id primitive.ObjectID) (*TEntity, error)
 	GetOrNilById(ctx context.Context, id primitive.ObjectID) (*TEntity, error)
 	GetMany(ctx context.Context, ids []primitive.ObjectID) ([]TEntity, error)

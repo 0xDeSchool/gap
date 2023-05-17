@@ -1,26 +1,5 @@
 package ddd
 
-type PagedResult[T any] struct {
-	TotalCount int64 `json:"totalCount"`
-	Items      []T   `json:"items"`
-	HasNext    bool  `json:"hasNext"`
-}
-
-func NewPagedResult[T any](totalCount int64, items []T) PagedResult[T] {
-	return PagedResult[T]{
-		TotalCount: totalCount,
-		Items:      items,
-	}
-}
-
-func Result[T any](totalCount int64, items []T, hasNext bool) PagedResult[T] {
-	return PagedResult[T]{
-		TotalCount: totalCount,
-		Items:      items,
-		HasNext:    hasNext,
-	}
-}
-
 type PagedItems[T any] struct {
 	Items   []T  `json:"items"`
 	HasNext bool `json:"hasNext"`
