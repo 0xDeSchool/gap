@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/0xDeSchool/gap/ginx"
 	"github.com/0xDeSchool/gap/log"
@@ -41,7 +42,7 @@ func (c *Collection[TEntity]) Find(ctx context.Context, filter bson.D, opts ...*
 	return data, err
 }
 
-func (c *Collection[TEntity]) FindByPage(ctx context.Context, filter bson.D, p *x.PageAndSort, opt *options.FindOptions) (*x.PagedResult[TEntity], error) {
+func (c *Collection[TEntity]) FindByPage(ctx context.Context, filter bson.D, p *x.PageAndSort, opts ...*options.FindOptions) (*x.PagedResult[TEntity], error) {
 	result := &x.PagedResult[TEntity]{}
 	findOptions := options.Find()
 	if p != nil {
@@ -53,8 +54,12 @@ func (c *Collection[TEntity]) FindByPage(ctx context.Context, filter bson.D, p *
 			}
 			result.Total = total
 		}
+		sort := c.ParseSort(p)
+		findOptions.SetSort(sort)
 	}
-	data, err := c.Find(ctx, filter, findOptions, opt)
+	newOpts := []*options.FindOptions{findOptions}
+	newOpts = append(newOpts, opts...)
+	data, err := c.Find(ctx, filter, newOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +107,11 @@ func (c *Collection[TEntity]) Insert(ctx context.Context, entity *TEntity) (prim
 	return result.InsertedID.(primitive.ObjectID), nil
 }
 
-func (c *Collection[TEntity]) InsertMany(ctx context.Context, entitis []TEntity, ignoreErr bool) ([]primitive.ObjectID, error) {
-	if len(entitis) == 0 {
+func (c *Collection[TEntity]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool) ([]primitive.ObjectID, error) {
+	if len(entities) == 0 {
 		return make([]primitive.ObjectID, 0), nil
 	}
-	data := ddd.SetAuditedMany(ctx, entitis)
+	data := ddd.SetAuditedMany(ctx, entities)
 	opts := options.InsertMany().SetOrdered(!ignoreErr)
 	result, err := c.Col().InsertMany(ctx, data, opts)
 	if err != nil {
@@ -234,6 +239,25 @@ func (c *Collection[TEntity]) MergeGlobalFilter(ctx context.Context, filter bson
 		filter = v
 	}
 	return filter
+}
+
+func (c *Collection[TEntity]) ParseSort(p *x.PageAndSort) bson.D {
+	sort := bson.D{}
+	if p.Sort != "" {
+		desc := 1
+		k := ""
+		if p.IsDesc() {
+			desc = -1
+			k = p.Sort[1:]
+		} else {
+			k = strings.TrimLeft(p.Sort, "+")
+		}
+		sort = append(sort, bson.E{Key: k, Value: desc})
+	}
+	if x.CanConvert[TEntity, ddd.CreationAuditedEntity]() && !strings.Contains(p.Sort, "createdAt") {
+		sort = append(sort, bson.E{Key: "createdAt", Value: -1})
+	}
+	return sort
 }
 
 func MergeFilter[T any](ctx context.Context, filter bson.D, opts *store.StoreOptions) bson.D {
