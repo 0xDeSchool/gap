@@ -98,22 +98,23 @@ func (c *Collection[TEntity]) Count(ctx context.Context, filter bson.D, opts ...
 	return totalCount, err
 }
 
-func (c *Collection[TEntity]) Insert(ctx context.Context, entity *TEntity) (primitive.ObjectID, error) {
+func (c *Collection[TEntity]) Insert(ctx context.Context, entity *TEntity, opts ...*options.InsertOneOptions) (primitive.ObjectID, error) {
 	ddd.SetAudited(ctx, entity)
-	result, err := c.Col().InsertOne(ctx, entity)
+	result, err := c.Col().InsertOne(ctx, entity, opts...)
 	if err != nil {
 		return primitive.NilObjectID, err
 	}
 	return result.InsertedID.(primitive.ObjectID), nil
 }
 
-func (c *Collection[TEntity]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool) ([]primitive.ObjectID, error) {
+func (c *Collection[TEntity]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool, opts ...*options.InsertManyOptions) ([]primitive.ObjectID, error) {
 	if len(entities) == 0 {
 		return make([]primitive.ObjectID, 0), nil
 	}
 	data := ddd.SetAuditedMany(ctx, entities)
-	opts := options.InsertMany().SetOrdered(!ignoreErr)
-	result, err := c.Col().InsertMany(ctx, data, opts)
+	opt := options.InsertMany().SetOrdered(!ignoreErr)
+	opts = append(opts, opt)
+	result, err := c.Col().InsertMany(ctx, data, opts...)
 	if err != nil {
 		if !ignoreErr {
 			return nil, err
