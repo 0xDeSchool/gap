@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"errors"
+	"github.com/0xDeSchool/gap/multi_tenancy"
 	"strings"
 
 	"github.com/0xDeSchool/gap/ginx"
@@ -211,7 +212,18 @@ func (c *Collection[TEntity]) DeleteMany(ctx context.Context, filter bson.D) (in
 	}
 }
 
-func (c *Collection[TEntity]) setSoftDeleteFilter(filter bson.D) bson.D {
+func (c *Collection[TEntity]) Col() *mongo.Collection {
+	return c.c
+}
+
+func (c *Collection[TEntity]) SetAllFilter(ctx context.Context, filter bson.D) bson.D {
+	filter = c.MergeGlobalFilter(ctx, filter)
+	filter = c.SetSoftDeleteFilter(filter)
+	filter = c.SetMultiTenantFilter(ctx, filter)
+	return filter
+}
+
+func (c *Collection[TEntity]) SetSoftDeleteFilter(filter bson.D) bson.D {
 	var v any = (*TEntity)(nil)
 	if _, ok := v.(ddd.SoftDeleteEntity); ok {
 		return append(filter, bson.E{Key: ddd.SoftDeleteFieldName, Value: false})
@@ -219,13 +231,15 @@ func (c *Collection[TEntity]) setSoftDeleteFilter(filter bson.D) bson.D {
 	return filter
 }
 
-func (c *Collection[TEntity]) Col() *mongo.Collection {
-	return c.c
-}
-
-func (c *Collection[TEntity]) SetAllFilter(ctx context.Context, filter bson.D) bson.D {
-	filter = c.MergeGlobalFilter(ctx, filter)
-	filter = c.setSoftDeleteFilter(filter)
+func (c *Collection[TEntity]) SetMultiTenantFilter(ctx context.Context, filter bson.D) bson.D {
+	enabled := multi_tenancy.IsEnableMultiTenantFilter(ctx)
+	if !enabled {
+		return filter
+	}
+	var v any = (*TEntity)(nil)
+	if _, ok := v.(ddd.IMultiTenancy); ok {
+		return append(filter, bson.E{Key: "tenant_id", Value: multi_tenancy.CurrentTenant(ctx).Id})
+	}
 	return filter
 }
 

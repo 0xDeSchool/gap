@@ -8,7 +8,7 @@ import (
 	"github.com/0xDeSchool/gap/x"
 )
 
-type Datafilter interface {
+type DataFilter interface {
 	Filter(ctx context.Context, v any) any
 }
 

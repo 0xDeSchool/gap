@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -24,7 +25,7 @@ type memoryCache struct {
 
 func newMemoryCache(options *CacheOptions) Cache {
 	c := &memoryCache{}
-	cache, _ := bigcache.NewBigCache(bigcache.DefaultConfig(options.LifeWindow))
+	cache, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(options.LifeWindow))
 	c.cache = cache
 	return c
 }

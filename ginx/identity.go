@@ -2,6 +2,7 @@ package ginx
 
 import (
 	"context"
+	"github.com/0xDeSchool/gap/multi_tenancy"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -39,4 +40,12 @@ func CurrentUser(c context.Context) *CurrentUserInfo {
 		}
 	}
 	return user
+}
+
+func CurrentTenant(c context.Context) *multi_tenancy.TenantInfo {
+	t := multi_tenancy.CurrentTenant(c)
+	if t == nil {
+		t = &multi_tenancy.TenantInfo{}
+	}
+	return t
 }

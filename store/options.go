@@ -8,7 +8,7 @@ import (
 	"github.com/0xDeSchool/gap/x"
 )
 
-type dataFilters map[reflect.Type]map[Datafilter]struct{}
+type dataFilters map[reflect.Type]map[DataFilter]struct{}
 
 type StoreOptions struct {
 	dataFilters dataFilters
@@ -23,29 +23,29 @@ func NewStoreOptions() *StoreOptions {
 }
 
 // AddFilter add filter for TEntity
-func AddFilter[T any](opts *StoreOptions, filter ...Datafilter) *StoreOptions {
+func AddFilter[T any](opts *StoreOptions, filter ...DataFilter) *StoreOptions {
 	t := x.TypeOf[T]()
 	for _, f := range filter {
 		if _, ok := opts.dataFilters[t]; !ok {
-			opts.dataFilters[t] = map[Datafilter]struct{}{}
+			opts.dataFilters[t] = map[DataFilter]struct{}{}
 		}
 		opts.dataFilters[t][f] = struct{}{}
 	}
 	return opts
 }
 
-func AddGlobalFilter(opts *StoreOptions, filter Datafilter) *StoreOptions {
+func AddGlobalFilter(opts *StoreOptions, filter DataFilter) *StoreOptions {
 	if _, ok := opts.dataFilters[golbalType]; !ok {
-		opts.dataFilters[golbalType] = map[Datafilter]struct{}{}
+		opts.dataFilters[golbalType] = map[DataFilter]struct{}{}
 	}
 	opts.dataFilters[golbalType][filter] = struct{}{}
 	return opts
 }
 
 // DataFilters get filter for TEntity
-func DataFilters[T any](ctx context.Context, opts *StoreOptions) []Datafilter {
+func DataFilters[T any](ctx context.Context, opts *StoreOptions) []DataFilter {
 	p := *app.Get[DataFilterProvider]()
-	filters := make([]Datafilter, 0)
+	filters := make([]DataFilter, 0)
 	if v, ok := opts.dataFilters[golbalType]; ok {
 		for k, _ := range v {
 			filters = append(filters, k)

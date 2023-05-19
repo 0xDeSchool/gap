@@ -89,6 +89,10 @@ func SetAudited(ctx context.Context, e any) {
 	if ue, ok := e.(UpdationAuditedEntity); ok {
 		ue.Updating(ctx)
 	}
+
+	if te, ok := e.(IMultiTenancy); ok {
+		te.SetTenant(ginx.CurrentTenant(ctx).Id)
+	}
 }
 
 // SetAuditedMany is a helper function to set audit fields for a slice of pointers.
