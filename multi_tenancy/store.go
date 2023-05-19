@@ -5,13 +5,6 @@ import "context"
 var TenantKey = struct{}{}
 var TenantFilterKey = struct{}{}
 
-type ITenantStore interface {
-	// FindById Get tenant by id
-	FindById(tenantId string) (*Tenant, error)
-	// FindByName Get tenant by name
-	FindByName(name string) (*Tenant, error)
-}
-
 func WithTenant(ctx context.Context, tenant *TenantInfo) context.Context {
 	return context.WithValue(ctx, TenantKey, tenant)
 }
