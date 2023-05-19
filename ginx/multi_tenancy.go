@@ -10,7 +10,7 @@ import (
 func MultiTenancy() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		resolver := app.Get[multi_tenancy.TenantResolver]()
-		result, err := resolver.ResolveTenantIdOrName(c)
+		result, err := resolver.ResolveTenant(c)
 		errx.CheckError(err)
 		ctx := c.Request.Context()
 		ctx = multi_tenancy.WithTenant(ctx, result)

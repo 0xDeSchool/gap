@@ -238,7 +238,7 @@ func (c *Collection[TEntity]) SetMultiTenantFilter(ctx context.Context, filter b
 	}
 	var v any = (*TEntity)(nil)
 	if _, ok := v.(ddd.IMultiTenancy); ok {
-		return append(filter, bson.E{Key: "tenant_id", Value: multi_tenancy.CurrentTenant(ctx).Id})
+		return append(filter, bson.E{Key: ddd.TenantIdDbKey, Value: multi_tenancy.CurrentTenant(ctx).Id})
 	}
 	return filter
 }

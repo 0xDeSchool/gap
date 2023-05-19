@@ -48,7 +48,7 @@ func NewTenantResolver() *TenantResolver {
 	}
 }
 
-func (t *TenantResolver) ResolveTenantIdOrName(ctx context.Context) (*TenantInfo, error) {
+func (t *TenantResolver) ResolveTenant(ctx context.Context) (*TenantInfo, error) {
 	result := &TenantInfo{}
 	resolvers := app.GetArray[ITenantResolveContributor]()
 	resolveCtx := NewTenantResolveContext(ctx)

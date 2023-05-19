@@ -5,8 +5,10 @@ type IMultiTenancy interface {
 	SetTenant(tenantId string)
 }
 
+const TenantIdDbKey = "tenantId"
+
 type MultiTenantEntity struct {
-	TenantId string `bson:"tenant_id"`
+	TenantId string `bson:"tenantId"`
 }
 
 func (m *MultiTenantEntity) GetTenant() string {
