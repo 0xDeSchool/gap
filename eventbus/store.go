@@ -9,7 +9,6 @@ import (
 	"github.com/0xDeSchool/gap/log"
 	"github.com/0xDeSchool/gap/utils/linq"
 	"github.com/0xDeSchool/gap/x"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type EventMsg struct {
@@ -27,7 +26,7 @@ type EventStore interface {
 	Save(ctx context.Context, data *EventMsg) error
 
 	GetList(ctx context.Context, p *x.PageParam) (x.PagedResult[EventMsg], error)
-	Delete(ctx context.Context, id []primitive.ObjectID) error
+	Delete(ctx context.Context, id []string) error
 }
 
 // ListenErrorEvents 监听错误事件，每天指定整点执行
@@ -53,7 +52,7 @@ func ListenErrorEvents(clock int) {
 					}
 					PublishJSON(context.Background(), event.Topic, event.Data)
 				}
-				ids := linq.Map(events.Data, func(event *EventMsg) primitive.ObjectID {
+				ids := linq.Map(events.Data, func(event *EventMsg) string {
 					return event.ID
 				})
 				err = (*store).Delete(context.Background(), ids)

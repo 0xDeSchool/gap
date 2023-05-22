@@ -2,11 +2,11 @@ package ddd
 
 import (
 	"context"
+	"github.com/0xDeSchool/gap/app"
+	"github.com/0xDeSchool/gap/x"
 	"time"
 
 	"github.com/0xDeSchool/gap/ginx"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type CreationAuditedEntity interface {
@@ -23,12 +23,12 @@ type ISoftDeleteEntity interface {
 }
 
 type AuditEntityBase struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"`
-	CreatorId primitive.ObjectID `bson:"creatorId"`
-	CreatedAt time.Time          `bson:"createdAt"`
+	ID        string    `bson:"_id,omitempty"`
+	CreatorId string    `bson:"creatorId"`
+	CreatedAt time.Time `bson:"createdAt"`
 }
 
-func (e AuditEntityBase) GetId() primitive.ObjectID {
+func (e AuditEntityBase) GetId() string {
 	return e.ID
 }
 
@@ -36,22 +36,22 @@ func (e *AuditEntityBase) Creating(ctx context.Context) {
 	if e.CreatedAt.IsZero() {
 		e.CreatedAt = time.Now()
 	}
-	if e.CreatorId.IsZero() {
+	if e.CreatorId == "" {
 		e.CreatorId = ginx.CurrentUser(ctx).ID
 	}
 }
 
 type FullAuditEntityBase struct {
 	AuditEntityBase `bson:",inline"`
-	UpdatedAt       time.Time          `bson:"updatedAt,omitempty"`
-	UpdaterId       primitive.ObjectID `bson:"updaterId,omitempty"`
+	UpdatedAt       time.Time `bson:"updatedAt,omitempty"`
+	UpdaterId       string    `bson:"updaterId,omitempty"`
 }
 
 func (e *FullAuditEntityBase) Updating(ctx context.Context) {
 	if e.UpdatedAt.IsZero() {
 		e.UpdatedAt = time.Now()
 	}
-	if e.UpdaterId.IsZero() {
+	if e.UpdaterId == "" {
 		e.UpdaterId = ginx.CurrentUser(ctx).ID
 	}
 }
@@ -59,16 +59,16 @@ func (e *FullAuditEntityBase) Updating(ctx context.Context) {
 const SoftDeleteFieldName = "isDeleted"
 
 type SoftDeleteEntity struct {
-	IsDeleted  bool               `bson:"isDeleted"`
-	DeletionAt time.Time          `bson:"deletedAt,omitempty"`
-	DeleterId  primitive.ObjectID `bson:"deleterId,omitempty"`
+	IsDeleted  bool      `bson:"isDeleted"`
+	DeletionAt time.Time `bson:"deletedAt,omitempty"`
+	DeleterId  string    `bson:"deleterId,omitempty"`
 }
 
 func (e *SoftDeleteEntity) Deleting(ctx context.Context) {
 	if e.DeletionAt.IsZero() {
 		e.DeletionAt = time.Now()
 	}
-	if e.DeleterId.IsZero() {
+	if e.DeleterId == "" {
 		e.DeleterId = ginx.CurrentUser(ctx).ID
 	}
 	e.IsDeleted = true
@@ -83,6 +83,12 @@ func WithHardDelete(ctx context.Context) context.Context {
 }
 
 func SetAudited(ctx context.Context, e any) {
+	ig := *app.Get[x.IdGenerator[string]]()
+	if ae, ok := e.(Entity); ok {
+		if ae.GetId() == "" {
+			ae.SetId(ig.Create())
+		}
+	}
 	if ae, ok := e.(CreationAuditedEntity); ok {
 		ae.Creating(ctx)
 	}

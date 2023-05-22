@@ -21,21 +21,21 @@ func NewMongoTransactionContext(ctx mongo.SessionContext) MongoTransactionContex
 	}
 }
 
-type MongoRepositoryBase[TEntity any] struct {
+type MongoRepositoryBase[TEntity any, TKey comparable] struct {
 	Options        *MongoOptions
 	CollectionName string
 	StoreOpts      *store.StoreOptions
 }
 
-func NewMongoRepositoryBase[TEntity any](collectionName string) *MongoRepositoryBase[TEntity] {
-	return &MongoRepositoryBase[TEntity]{
+func NewMongoRepositoryBase[TEntity any, TKey comparable](collectionName string) *MongoRepositoryBase[TEntity, TKey] {
+	return &MongoRepositoryBase[TEntity, TKey]{
 		Options:        app.Get[MongoOptions](),
 		StoreOpts:      app.Get[store.StoreOptions](),
 		CollectionName: collectionName,
 	}
 }
 
-func (mr *MongoRepositoryBase[TEntity]) GetCollection(ctx context.Context, name string) *mongo.Collection {
+func (mr *MongoRepositoryBase[TEntity, TKey]) GetCollection(ctx context.Context, name string) *mongo.Collection {
 	var client *mongo.Client
 	if sessionCtx, ok := ctx.(mongo.SessionContext); ok {
 		client = sessionCtx.Client()
@@ -45,21 +45,21 @@ func (mr *MongoRepositoryBase[TEntity]) GetCollection(ctx context.Context, name 
 	return client.Database(mr.Options.DbName).Collection(name)
 }
 
-func (mr *MongoRepositoryBase[TEntity]) Collection(ctx context.Context) *Collection[TEntity] {
+func (mr *MongoRepositoryBase[TEntity, TKey]) Collection(ctx context.Context) *Collection[TEntity, TKey] {
 	c := mr.GetCollection(ctx, mr.CollectionName)
-	return NewCollection[TEntity](c, mr.StoreOpts)
+	return NewCollection[TEntity, TKey](c, mr.StoreOpts)
 }
 
-func (mr *MongoRepositoryBase[TEntity]) GetPagedList(ctx context.Context, p *x.PageAndSort) (*x.PagedResult[TEntity], error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) GetPagedList(ctx context.Context, p *x.PageAndSort) (*x.PagedResult[TEntity], error) {
 	filter := bson.D{}
 	return mr.Collection(ctx).FindByPage(ctx, filter, p)
 }
 
-func (mr *MongoRepositoryBase[TEntity]) GetById(ctx context.Context, id primitive.ObjectID) (*TEntity, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) GetById(ctx context.Context, id TKey) (*TEntity, error) {
 	return mr.Collection(ctx).FindOne(ctx, bson.D{{Key: "_id", Value: id}})
 }
 
-func (mr *MongoRepositoryBase[TEntity]) GetOrNilById(ctx context.Context, id primitive.ObjectID) (*TEntity, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) GetOrNilById(ctx context.Context, id TKey) (*TEntity, error) {
 	filter := bson.D{{Key: "_id", Value: id}}
 	data, err := mr.Collection(ctx).Find(ctx, filter)
 	if err != nil {
@@ -71,11 +71,11 @@ func (mr *MongoRepositoryBase[TEntity]) GetOrNilById(ctx context.Context, id pri
 	return &data[0], nil
 }
 
-func (mr *MongoRepositoryBase[TEntity]) GetMany(ctx context.Context, ids []primitive.ObjectID) ([]TEntity, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) GetMany(ctx context.Context, ids []TKey) ([]TEntity, error) {
 	filter := bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}}
 	return mr.Collection(ctx).Find(ctx, filter)
 }
-func (mr *MongoRepositoryBase[TEntity]) Exists(ctx context.Context, id primitive.ObjectID) (bool, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) Exists(ctx context.Context, id TKey) (bool, error) {
 	filter := bson.D{{Key: "_id", Value: id}}
 	data, err := mr.Collection(ctx).Find(ctx, filter)
 	if err != nil {
@@ -84,35 +84,35 @@ func (mr *MongoRepositoryBase[TEntity]) Exists(ctx context.Context, id primitive
 	return len(data) > 0, nil
 }
 
-func (mr *MongoRepositoryBase[TEntity]) Count(ctx context.Context) (int64, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) Count(ctx context.Context) (int64, error) {
 	filter := bson.D{}
 	return mr.Collection(ctx).Count(ctx, filter)
 }
 
-func (mr *MongoRepositoryBase[TEntity]) FindByRegex(ctx context.Context, field, regex string, p *x.PageAndSort) (*x.PagedResult[TEntity], error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) FindByRegex(ctx context.Context, field, regex string, p *x.PageAndSort) (*x.PagedResult[TEntity], error) {
 	filter := bson.D{{Key: field, Value: primitive.Regex{Pattern: regex, Options: "i"}}}
 	return mr.Collection(ctx).FindByPage(ctx, filter, p)
 }
 
-func (mr *MongoRepositoryBase[TEntity]) Insert(ctx context.Context, entity *TEntity) (primitive.ObjectID, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) Insert(ctx context.Context, entity *TEntity) (TKey, error) {
 	return mr.Collection(ctx).Insert(ctx, entity)
 }
 
 // InsertMany ignoreErr 是否忽略批量插入时的错误, 一般为false, 当导入时忽略重复key的时候可以设为true
-func (mr *MongoRepositoryBase[TEntity]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool) ([]primitive.ObjectID, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool) ([]TKey, error) {
 	return mr.Collection(ctx).InsertMany(ctx, entities, ignoreErr)
 }
 
-func (mr *MongoRepositoryBase[TEntity]) UpdateById(ctx context.Context, id primitive.ObjectID, data *TEntity) (int, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) UpdateById(ctx context.Context, id TKey, data *TEntity) (int, error) {
 	filter := bson.D{{Key: "_id", Value: id}}
 	return mr.Collection(ctx).UpdateOne(ctx, filter, data)
 }
 
-func (mr *MongoRepositoryBase[TEntity]) Delete(ctx context.Context, id primitive.ObjectID) (int, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) Delete(ctx context.Context, id TKey) (int, error) {
 	filter := bson.D{{Key: "_id", Value: id}}
 	return mr.Collection(ctx).DeleteOne(ctx, filter)
 }
-func (mr *MongoRepositoryBase[TEntity]) DeleteMany(ctx context.Context, ids []primitive.ObjectID) (int, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) DeleteMany(ctx context.Context, ids []TKey) (int, error) {
 	filter := bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}}
 	return mr.Collection(ctx).DeleteMany(ctx, filter)
 }
@@ -121,7 +121,7 @@ type orderResult struct {
 	MaxOrder float64 `bson:"maxOrder"`
 }
 
-func (mr *MongoRepositoryBase[TEntity]) MaxOrder(ctx context.Context, field string, v any) float64 {
+func (mr *MongoRepositoryBase[TEntity, TKey]) MaxOrder(ctx context.Context, field string, v any) float64 {
 	match := bson.D{{Key: "$match", Value: bson.D{{Key: field, Value: v}}}}
 	var groupKey any = primitive.NilObjectID
 	if field != "" {
@@ -146,7 +146,7 @@ func (mr *MongoRepositoryBase[TEntity]) MaxOrder(ctx context.Context, field stri
 	return 0
 }
 
-func (mr *MongoRepositoryBase[TEntity]) MaxOrderMany(ctx context.Context, field string, v any) map[any]float64 {
+func (mr *MongoRepositoryBase[TEntity, TKey]) MaxOrderMany(ctx context.Context, field string, v any) map[any]float64 {
 	match := bson.D{{Key: "$match", Value: bson.D{{Key: field, Value: bson.M{"$in": v}}}}}
 	var groupKey any = primitive.NilObjectID
 	if field != "" {

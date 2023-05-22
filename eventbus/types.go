@@ -1,7 +1,5 @@
 package eventbus
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
-
 type EntityCreatedEvent[T any] struct {
 	Entity *T `json:"entity"`
 }
@@ -23,8 +21,8 @@ func Updated[T any](entity *T) *EntityUpdatedEvent[T] {
 }
 
 type EntityDeletedEvent[T any] struct {
-	ID     primitive.ObjectID `json:"id"`
-	Entity *T                 `json:"entity"`
+	ID     string `json:"id"`
+	Entity *T     `json:"entity"`
 }
 
 func Deleted[T any](entity *T) *EntityDeletedEvent[T] {

@@ -15,24 +15,23 @@ import (
 	"github.com/0xDeSchool/gap/store"
 	"github.com/0xDeSchool/gap/utils/linq"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Collection[TEntity any] struct {
+type Collection[TEntity any, TKey comparable] struct {
 	c    *mongo.Collection
 	opts *store.StoreOptions
 }
 
-func NewCollection[TEntity any](c *mongo.Collection, opts *store.StoreOptions) *Collection[TEntity] {
-	return &Collection[TEntity]{
+func NewCollection[TEntity any, TKey comparable](c *mongo.Collection, opts *store.StoreOptions) *Collection[TEntity, TKey] {
+	return &Collection[TEntity, TKey]{
 		c:    c,
 		opts: opts,
 	}
 }
 
-func (c *Collection[TEntity]) Find(ctx context.Context, filter bson.D, opts ...*options.FindOptions) ([]TEntity, error) {
+func (c *Collection[TEntity, TKey]) Find(ctx context.Context, filter bson.D, opts ...*options.FindOptions) ([]TEntity, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	cur, err := c.Col().Find(ctx, filter, opts...)
 	if err != nil {
@@ -43,7 +42,7 @@ func (c *Collection[TEntity]) Find(ctx context.Context, filter bson.D, opts ...*
 	return data, err
 }
 
-func (c *Collection[TEntity]) FindByPage(ctx context.Context, filter bson.D, p *x.PageAndSort, opts ...*options.FindOptions) (*x.PagedResult[TEntity], error) {
+func (c *Collection[TEntity, TKey]) FindByPage(ctx context.Context, filter bson.D, p *x.PageAndSort, opts ...*options.FindOptions) (*x.PagedResult[TEntity], error) {
 	result := &x.PagedResult[TEntity]{}
 	findOptions := options.Find()
 	if p != nil {
@@ -71,7 +70,7 @@ func (c *Collection[TEntity]) FindByPage(ctx context.Context, filter bson.D, p *
 	return result, nil
 }
 
-func (c *Collection[TEntity]) FindOne(ctx context.Context, filter bson.D, opts ...*options.FindOneOptions) (*TEntity, error) {
+func (c *Collection[TEntity, TKey]) FindOne(ctx context.Context, filter bson.D, opts ...*options.FindOneOptions) (*TEntity, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	result := c.Col().FindOne(ctx, filter, opts...)
 	err := result.Err()
@@ -85,7 +84,7 @@ func (c *Collection[TEntity]) FindOne(ctx context.Context, filter bson.D, opts .
 	return &v, err
 }
 
-func (c *Collection[TEntity]) GetMany(ctx context.Context, ids []primitive.ObjectID) ([]TEntity, error) {
+func (c *Collection[TEntity, TKey]) GetMany(ctx context.Context, ids []string) ([]TEntity, error) {
 	if len(ids) == 0 {
 		return make([]TEntity, 0), nil
 	}
@@ -93,24 +92,24 @@ func (c *Collection[TEntity]) GetMany(ctx context.Context, ids []primitive.Objec
 	return c.Find(ctx, f)
 }
 
-func (c *Collection[TEntity]) Count(ctx context.Context, filter bson.D, opts ...*options.CountOptions) (int64, error) {
+func (c *Collection[TEntity, TKey]) Count(ctx context.Context, filter bson.D, opts ...*options.CountOptions) (int64, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	totalCount, err := c.Col().CountDocuments(ctx, filter, opts...)
 	return totalCount, err
 }
 
-func (c *Collection[TEntity]) Insert(ctx context.Context, entity *TEntity, opts ...*options.InsertOneOptions) (primitive.ObjectID, error) {
+func (c *Collection[TEntity, TKey]) Insert(ctx context.Context, entity *TEntity, opts ...*options.InsertOneOptions) (TKey, error) {
 	ddd.SetAudited(ctx, entity)
 	result, err := c.Col().InsertOne(ctx, entity, opts...)
 	if err != nil {
-		return primitive.NilObjectID, err
+		return *new(TKey), err
 	}
-	return result.InsertedID.(primitive.ObjectID), nil
+	return result.InsertedID.(TKey), nil
 }
 
-func (c *Collection[TEntity]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool, opts ...*options.InsertManyOptions) ([]primitive.ObjectID, error) {
+func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool, opts ...*options.InsertManyOptions) ([]TKey, error) {
 	if len(entities) == 0 {
-		return make([]primitive.ObjectID, 0), nil
+		return make([]TKey, 0), nil
 	}
 	data := ddd.SetAuditedMany(ctx, entities)
 	opt := options.InsertMany().SetOrdered(!ignoreErr)
@@ -124,13 +123,13 @@ func (c *Collection[TEntity]) InsertMany(ctx context.Context, entities []TEntity
 		}
 	}
 	if result == nil {
-		return make([]primitive.ObjectID, 0), nil
+		return make([]TKey, 0), nil
 	}
-	ids := linq.Map(result.InsertedIDs, func(t *interface{}) primitive.ObjectID { return (*t).(primitive.ObjectID) })
+	ids := linq.Map(result.InsertedIDs, func(t *interface{}) TKey { return (*t).(TKey) })
 	return ids, nil
 }
 
-func (c *Collection[TEntity]) UpdateOne(ctx context.Context, filter bson.D, entity *TEntity, opts ...*options.UpdateOptions) (int, error) {
+func (c *Collection[TEntity, TKey]) UpdateOne(ctx context.Context, filter bson.D, entity *TEntity, opts ...*options.UpdateOptions) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	ddd.SetAudited(ctx, entity)
 	result, err := c.Col().UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: entity}}, opts...)
@@ -140,7 +139,7 @@ func (c *Collection[TEntity]) UpdateOne(ctx context.Context, filter bson.D, enti
 	return int(result.ModifiedCount), nil
 }
 
-func (c *Collection[TEntity]) UpdateMany(ctx context.Context, filter bson.D, update interface{}, opts ...*options.UpdateOptions) (int, error) {
+func (c *Collection[TEntity, TKey]) UpdateMany(ctx context.Context, filter bson.D, update interface{}, opts ...*options.UpdateOptions) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	set := bson.D{{Key: "$set", Value: update}}
 	result, err := c.Col().UpdateMany(ctx, filter, set, opts...)
@@ -150,7 +149,7 @@ func (c *Collection[TEntity]) UpdateMany(ctx context.Context, filter bson.D, upd
 	return int(result.ModifiedCount), nil
 }
 
-func (c *Collection[TEntity]) DeleteOne(ctx context.Context, filter bson.D) (int, error) {
+func (c *Collection[TEntity, TKey]) DeleteOne(ctx context.Context, filter bson.D) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	var v any = (*TEntity)(nil)
 	if _, ok := v.(ddd.ISoftDeleteEntity); ok {
@@ -175,7 +174,7 @@ func (c *Collection[TEntity]) DeleteOne(ctx context.Context, filter bson.D) (int
 	}
 }
 
-func (c *Collection[TEntity]) DeleteMany(ctx context.Context, filter bson.D) (int, error) {
+func (c *Collection[TEntity, TKey]) DeleteMany(ctx context.Context, filter bson.D) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	var v any = (*TEntity)(nil)
 	if _, ok := v.(ddd.ISoftDeleteEntity); ok {
@@ -212,18 +211,18 @@ func (c *Collection[TEntity]) DeleteMany(ctx context.Context, filter bson.D) (in
 	}
 }
 
-func (c *Collection[TEntity]) Col() *mongo.Collection {
+func (c *Collection[TEntity, TKey]) Col() *mongo.Collection {
 	return c.c
 }
 
-func (c *Collection[TEntity]) SetAllFilter(ctx context.Context, filter bson.D) bson.D {
+func (c *Collection[TEntity, TKey]) SetAllFilter(ctx context.Context, filter bson.D) bson.D {
 	filter = c.MergeGlobalFilter(ctx, filter)
 	filter = c.SetSoftDeleteFilter(filter)
 	filter = c.SetMultiTenantFilter(ctx, filter)
 	return filter
 }
 
-func (c *Collection[TEntity]) SetSoftDeleteFilter(filter bson.D) bson.D {
+func (c *Collection[TEntity, TKey]) SetSoftDeleteFilter(filter bson.D) bson.D {
 	var v any = (*TEntity)(nil)
 	if _, ok := v.(ddd.SoftDeleteEntity); ok {
 		return append(filter, bson.E{Key: ddd.SoftDeleteFieldName, Value: false})
@@ -231,7 +230,7 @@ func (c *Collection[TEntity]) SetSoftDeleteFilter(filter bson.D) bson.D {
 	return filter
 }
 
-func (c *Collection[TEntity]) SetMultiTenantFilter(ctx context.Context, filter bson.D) bson.D {
+func (c *Collection[TEntity, TKey]) SetMultiTenantFilter(ctx context.Context, filter bson.D) bson.D {
 	enabled := multi_tenancy.IsEnableMultiTenantFilter(ctx)
 	if !enabled {
 		return filter
@@ -243,7 +242,7 @@ func (c *Collection[TEntity]) SetMultiTenantFilter(ctx context.Context, filter b
 	return filter
 }
 
-func (c *Collection[TEntity]) MergeGlobalFilter(ctx context.Context, filter bson.D) bson.D {
+func (c *Collection[TEntity, TKey]) MergeGlobalFilter(ctx context.Context, filter bson.D) bson.D {
 	dfs := store.DataFilters[TEntity](ctx, c.opts)
 	for _, v := range dfs {
 		df := v.Filter(ctx, filter)
@@ -256,7 +255,7 @@ func (c *Collection[TEntity]) MergeGlobalFilter(ctx context.Context, filter bson
 	return filter
 }
 
-func (c *Collection[TEntity]) ParseSort(p *x.PageAndSort) bson.D {
+func (c *Collection[TEntity, TKey]) ParseSort(p *x.PageAndSort) bson.D {
 	sort := bson.D{}
 	if p.Sort != "" {
 		desc := 1

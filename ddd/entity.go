@@ -5,11 +5,11 @@ import (
 	"strconv"
 
 	"github.com/0xDeSchool/gap/errx"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Entity interface {
-	GetId() primitive.ObjectID
+	GetId() string
+	SetId(id string)
 }
 
 type OrderEntity interface {
@@ -25,11 +25,15 @@ func (e OrderEntityBase) GetOrder() float64 {
 }
 
 type EntityBase struct {
-	ID primitive.ObjectID `bson:"_id,omitempty"`
+	ID string `bson:"_id,omitempty"`
 }
 
-func (e *EntityBase) GetId() primitive.ObjectID {
+func (e *EntityBase) GetId() string {
 	return e.ID
+}
+
+func (e *EntityBase) SetId(id string) {
+	e.ID = id
 }
 
 type WithExtraEntity struct {
