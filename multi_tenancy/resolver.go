@@ -13,7 +13,9 @@ type TenantResolveContext struct {
 }
 
 func NewTenantResolveContext(ctx context.Context) *TenantResolveContext {
-	return &TenantResolveContext{}
+	return &TenantResolveContext{
+		Ctx: ctx,
+	}
 }
 
 func (c *TenantResolveContext) HasResolved() bool {
