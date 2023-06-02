@@ -23,9 +23,9 @@ type ISoftDeleteEntity interface {
 }
 
 type AuditEntityBase struct {
-	ID        string    `bson:"_id,omitempty"`
-	CreatorId string    `bson:"creatorId"`
-	CreatedAt time.Time `bson:"createdAt"`
+	EntityBase `bson:",inline"`
+	CreatorId  string    `bson:"creatorId"`
+	CreatedAt  time.Time `bson:"createdAt"`
 }
 
 func (e AuditEntityBase) GetId() string {
