@@ -13,7 +13,6 @@ import (
 	"github.com/0xDeSchool/gap/ddd"
 	"github.com/0xDeSchool/gap/errx"
 	"github.com/0xDeSchool/gap/store"
-	"github.com/0xDeSchool/gap/utils/linq"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -98,18 +97,18 @@ func (c *Collection[TEntity, TKey]) Count(ctx context.Context, filter bson.D, op
 	return totalCount, err
 }
 
-func (c *Collection[TEntity, TKey]) Insert(ctx context.Context, entity *TEntity, opts ...*options.InsertOneOptions) (TKey, error) {
+func (c *Collection[TEntity, TKey]) Insert(ctx context.Context, entity *TEntity, opts ...*options.InsertOneOptions) (*TEntity, error) {
 	ddd.SetAudited(ctx, entity)
-	result, err := c.Col().InsertOne(ctx, entity, opts...)
+	_, err := c.Col().InsertOne(ctx, entity, opts...)
 	if err != nil {
-		return *new(TKey), err
+		return nil, err
 	}
-	return result.InsertedID.(TKey), nil
+	return entity, nil
 }
 
-func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool, opts ...*options.InsertManyOptions) ([]TKey, error) {
+func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool, opts ...*options.InsertManyOptions) ([]TEntity, error) {
 	if len(entities) == 0 {
-		return make([]TKey, 0), nil
+		return entities, nil
 	}
 	data := ddd.SetAuditedMany(ctx, entities)
 	opt := options.InsertMany().SetOrdered(!ignoreErr)
@@ -123,10 +122,9 @@ func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []T
 		}
 	}
 	if result == nil {
-		return make([]TKey, 0), nil
+		return entities, nil
 	}
-	ids := linq.Map(result.InsertedIDs, func(t *interface{}) TKey { return (*t).(TKey) })
-	return ids, nil
+	return entities, nil
 }
 
 func (c *Collection[TEntity, TKey]) UpdateOne(ctx context.Context, filter bson.D, entity *TEntity, opts ...*options.UpdateOptions) (int, error) {

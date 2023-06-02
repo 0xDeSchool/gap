@@ -94,12 +94,12 @@ func (mr *MongoRepositoryBase[TEntity, TKey]) FindByRegex(ctx context.Context, f
 	return mr.Collection(ctx).FindByPage(ctx, filter, p)
 }
 
-func (mr *MongoRepositoryBase[TEntity, TKey]) Insert(ctx context.Context, entity *TEntity) (TKey, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) Insert(ctx context.Context, entity *TEntity) (*TEntity, error) {
 	return mr.Collection(ctx).Insert(ctx, entity)
 }
 
 // InsertMany ignoreErr 是否忽略批量插入时的错误, 一般为false, 当导入时忽略重复key的时候可以设为true
-func (mr *MongoRepositoryBase[TEntity, TKey]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool) ([]TKey, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool) ([]TEntity, error) {
 	return mr.Collection(ctx).InsertMany(ctx, entities, ignoreErr)
 }
 
