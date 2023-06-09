@@ -1,6 +1,7 @@
 package log
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -52,13 +53,13 @@ func Warnf(format string, v ...interface{}) {
 	_logger.Warn().Msgf(format, v...)
 }
 
-func Error(msg string, errs ...error) {
-	errMsg := linq.Map(errs, func(err *error) string { return (*err).Error() })
+func Error(msg string, errs ...any) {
+	errMsg := linq.Map(errs, func(err *any) string { return fmt.Sprintf("%v", *err) })
 	msg += msg + ":" + strings.Join(errMsg, ",")
-	msg = "\n" + printStack()
+	msg += "\n" + printStack()
 	logger := _logger.Error()
 	if len(errs) > 0 {
-		logger = logger.Err(errs[0])
+		logger = logger.Err(errors.New(errMsg[0]))
 	}
 	logger.Msg(msg)
 }

@@ -95,13 +95,14 @@ func AbortScopedUnitWork(ctx context.Context) {
 	}
 }
 
-// 在当前请求周期中创建新的UnitWork，可控制UnitWork提交或取消
+// NewUnitWork 在当前请求周期中创建新的UnitWork，可控制UnitWork提交或取消
 // 另外，在请求结束时，UnitWorkMiddleware会自动提交，当请求执行过程中发生错误时自动abort
 func NewUnitWork(ctx context.Context) UnitWork {
 	v := ctx.Value(UnitWorkKey)
-	if v != nil {
-		return v.(*unitWorkManager).New()
-	} else {
-		panic(errors.New("context has no unitwork instance"))
+	if v == nil {
+		v = newUnitWorkManager()
+		ctx = context.WithValue(ctx, UnitWorkKey, v)
 	}
+	uwm := v.(*unitWorkManager)
+	return uwm.New()
 }
