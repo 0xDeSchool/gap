@@ -1,6 +1,7 @@
 package ginx
 
 import (
+	"sort"
 	"strconv"
 
 	"github.com/0xDeSchool/gap/log"
@@ -26,9 +27,16 @@ type ServerOptions struct {
 	Environment AppEnvironment
 }
 
+type serverHandler struct {
+	Order int // 优先级
+	Func  gin.HandlerFunc
+}
+
 type Server struct {
 	G       *gin.Engine
 	Options *ServerOptions
+
+	middlewares []serverHandler
 }
 
 func NewServer(g *gin.Engine, options *ServerOptions) *Server {
@@ -38,7 +46,30 @@ func NewServer(g *gin.Engine, options *ServerOptions) *Server {
 	}
 }
 
-func (s Server) Run() error {
+func (s *Server) Use(handlers ...gin.HandlerFunc) *Server {
+	for _, handler := range handlers {
+		s.middlewares = append(s.middlewares, serverHandler{Order: 0, Func: handler})
+	}
+	return s
+}
+
+func (s *Server) OrderedUse(order int, handlers ...gin.HandlerFunc) *Server {
+	for _, handler := range handlers {
+		s.middlewares = append(s.middlewares, serverHandler{Order: order, Func: handler})
+	}
+	return s
+}
+
+func (s *Server) initMiddlewares() {
+	sort.SliceStable(s.middlewares, func(i, j int) bool {
+		return s.middlewares[i].Order < s.middlewares[j].Order
+	})
+	for _, handler := range s.middlewares {
+		s.G.Use(handler.Func)
+	}
+}
+
+func (s *Server) Run() error {
 	addr := ":" + strconv.Itoa(s.Options.Port)
 	if s.Options.Port == 0 {
 		addr = ":5000"
