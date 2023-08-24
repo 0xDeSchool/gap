@@ -52,13 +52,17 @@ func (b *ServerBuilder) Add(fun func(b *ServerBuilder)) *ServerBuilder {
 	return b
 }
 
-func (b *ServerBuilder) Use(handler gin.HandlerFunc) *ServerBuilder {
-	b.middlewares = append(b.middlewares, serverHandler{Func: handler})
+func (b *ServerBuilder) Use(handlers ...gin.HandlerFunc) *ServerBuilder {
+	for _, handler := range handlers {
+		b.middlewares = append(b.middlewares, serverHandler{Order: 0, Func: handler})
+	}
 	return b
 }
 
-func (b *ServerBuilder) OrderUse(order int, handler gin.HandlerFunc) *ServerBuilder {
-	b.middlewares = append(b.middlewares, serverHandler{Order: order, Func: handler})
+func (b *ServerBuilder) OrderUse(order int, handlers ...gin.HandlerFunc) *ServerBuilder {
+	for _, handler := range handlers {
+		b.middlewares = append(b.middlewares, serverHandler{Order: order, Func: handler})
+	}
 	return b
 }
 
