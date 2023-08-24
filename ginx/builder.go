@@ -59,7 +59,7 @@ func (b *ServerBuilder) Use(handlers ...gin.HandlerFunc) *ServerBuilder {
 	return b
 }
 
-func (b *ServerBuilder) OrderUse(order int, handlers ...gin.HandlerFunc) *ServerBuilder {
+func (b *ServerBuilder) OrderedUse(order int, handlers ...gin.HandlerFunc) *ServerBuilder {
 	for _, handler := range handlers {
 		b.middlewares = append(b.middlewares, serverHandler{Order: order, Func: handler})
 	}
