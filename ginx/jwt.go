@@ -80,9 +80,9 @@ func AddJwt(builder *ServerBuilder, configure func(*jwt.GinJWTMiddleware)) *JWTB
 	return jwt
 }
 
-func (sb *ServerBuilder) UseRestRoutes() {
-	authMiddleware := sb.Items["JwtAuthMiddleware"].(*jwt.GinJWTMiddleware)
-	sb.PreConfigure(func(s *Server) error {
+func (b *ServerBuilder) UseRestRoutes() {
+	authMiddleware := b.Items["JwtAuthMiddleware"].(*jwt.GinJWTMiddleware)
+	b.PreConfigure(func(s *Server) error {
 		// 登录接口，验证签名
 		s.G.POST("/api/login", authMiddleware.LoginHandler)
 		// 登出接口
