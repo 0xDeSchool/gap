@@ -36,13 +36,13 @@ func NewMongoRepositoryBase[TEntity any, TKey comparable](collectionName string)
 }
 
 func (mr *MongoRepositoryBase[TEntity, TKey]) GetCollection(ctx context.Context, name string) *mongo.Collection {
-	var client *mongo.Client
+	var mc *mongo.Client
 	if sessionCtx, ok := ctx.(mongo.SessionContext); ok {
-		client = sessionCtx.Client()
+		mc = sessionCtx.Client()
 	} else {
-		client = app.Get[mongo.Client]()
+		mc = app.Get[mongo.Client]()
 	}
-	return client.Database(mr.Options.DbName).Collection(name)
+	return mc.Database(mr.Options.DbName).Collection(name)
 }
 
 func (mr *MongoRepositoryBase[TEntity, TKey]) Collection(ctx context.Context) *Collection[TEntity, TKey] {
@@ -68,10 +68,10 @@ func (mr *MongoRepositoryBase[TEntity, TKey]) GetOrNilById(ctx context.Context, 
 	if len(data) == 0 {
 		return nil, nil
 	}
-	return &data[0], nil
+	return data[0], nil
 }
 
-func (mr *MongoRepositoryBase[TEntity, TKey]) GetMany(ctx context.Context, ids []TKey) ([]TEntity, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) GetMany(ctx context.Context, ids []TKey) ([]*TEntity, error) {
 	filter := bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}}
 	return mr.Collection(ctx).Find(ctx, filter)
 }
@@ -99,7 +99,7 @@ func (mr *MongoRepositoryBase[TEntity, TKey]) Insert(ctx context.Context, entity
 }
 
 // InsertMany ignoreErr 是否忽略批量插入时的错误, 一般为false, 当导入时忽略重复key的时候可以设为true
-func (mr *MongoRepositoryBase[TEntity, TKey]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool) ([]TEntity, error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) InsertMany(ctx context.Context, entities []*TEntity, ignoreErr bool) ([]*TEntity, error) {
 	return mr.Collection(ctx).InsertMany(ctx, entities, ignoreErr)
 }
 

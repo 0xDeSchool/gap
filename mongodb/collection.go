@@ -30,13 +30,13 @@ func NewCollection[TEntity any, TKey comparable](c *mongo.Collection, opts *stor
 	}
 }
 
-func (c *Collection[TEntity, TKey]) Find(ctx context.Context, filter bson.D, opts ...*options.FindOptions) ([]TEntity, error) {
+func (c *Collection[TEntity, TKey]) Find(ctx context.Context, filter bson.D, opts ...*options.FindOptions) ([]*TEntity, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	cur, err := c.Col().Find(ctx, filter, opts...)
 	if err != nil {
 		return nil, err
 	}
-	data := make([]TEntity, 0)
+	data := make([]*TEntity, 0)
 	err = cur.All(context.Background(), &data)
 	return data, err
 }
@@ -83,9 +83,9 @@ func (c *Collection[TEntity, TKey]) FindOne(ctx context.Context, filter bson.D, 
 	return &v, err
 }
 
-func (c *Collection[TEntity, TKey]) GetMany(ctx context.Context, ids []string) ([]TEntity, error) {
+func (c *Collection[TEntity, TKey]) GetMany(ctx context.Context, ids []string) ([]*TEntity, error) {
 	if len(ids) == 0 {
-		return make([]TEntity, 0), nil
+		return make([]*TEntity, 0), nil
 	}
 	f := bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}}
 	return c.Find(ctx, f)
@@ -106,7 +106,7 @@ func (c *Collection[TEntity, TKey]) Insert(ctx context.Context, entity *TEntity,
 	return entity, nil
 }
 
-func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []TEntity, ignoreErr bool, opts ...*options.InsertManyOptions) ([]TEntity, error) {
+func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []*TEntity, ignoreErr bool, opts ...*options.InsertManyOptions) ([]*TEntity, error) {
 	if len(entities) == 0 {
 		return entities, nil
 	}
@@ -184,11 +184,10 @@ func (c *Collection[TEntity, TKey]) DeleteMany(ctx context.Context, filter bson.
 		uw.Start(ctx)
 		var count = 0
 		for i := range es {
-			var v any = &es[i]
 			softEntity := v.(ddd.ISoftDeleteEntity)
 			softEntity.Deleting(ctx)
 			idFilter := bson.D{{"_id", softEntity.GetId()}}
-			ct, err := c.UpdateOne(ctx, idFilter, &es[i])
+			ct, err := c.UpdateOne(ctx, idFilter, es[i])
 			if err != nil {
 				uw.Abort(ctx)
 				return 0, err
