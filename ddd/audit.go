@@ -83,11 +83,12 @@ func WithHardDelete(ctx context.Context) context.Context {
 }
 
 func SetAudited[TKey comparable](ctx context.Context, e any) {
-	ig := *app.Get[x.IdGenerator[TKey]]()
 	if ae, ok := e.(Entity[TKey]); ok {
-		var defaultId TKey
-		if ae.GetId() == defaultId {
-			ae.SetId(ig.Create())
+		if ig, ok2 := app.GetPtrOptional[x.IdGenerator[TKey]](); ok2 {
+			var defaultId TKey
+			if ae.GetId() == defaultId {
+				ae.SetId(ig.Create())
+			}
 		}
 	}
 	if ae, ok := e.(CreationAuditedEntity[TKey]); ok {

@@ -1,4 +1,4 @@
-package linq
+package slicex
 
 func Unique[TSource any](source []TSource, equals func(t1 TSource, t2 TSource) bool) []TSource {
 	newArr := make([]TSource, 0)

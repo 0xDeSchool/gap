@@ -1,4 +1,4 @@
-package sliceptr
+package slicexp
 
 func Map[TSource any, TResult any](source []*TSource, selector func(*TSource) *TResult) []*TResult {
 	if source == nil {

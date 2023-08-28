@@ -8,7 +8,7 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/0xDeSchool/gap/utils/linq"
+	"github.com/0xDeSchool/gap/utils/slicex"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -54,7 +54,7 @@ func Warnf(format string, v ...interface{}) {
 }
 
 func Error(msg string, errs ...any) {
-	errMsg := linq.Map(errs, func(err *any) string { return fmt.Sprintf("%v", *err) })
+	errMsg := slicex.Map(errs, func(err *any) string { return fmt.Sprintf("%v", *err) })
 	msg += msg + ":" + strings.Join(errMsg, ",")
 	msg += "\n" + printStack()
 	logger := _logger.Error()

@@ -7,7 +7,7 @@ import (
 
 	"github.com/0xDeSchool/gap/ddd"
 	"github.com/0xDeSchool/gap/log"
-	"github.com/0xDeSchool/gap/utils/linq"
+	"github.com/0xDeSchool/gap/utils/slicex"
 	"github.com/0xDeSchool/gap/x"
 )
 
@@ -52,7 +52,7 @@ func ListenErrorEvents(clock int) {
 					}
 					PublishJSON(context.Background(), event.Topic, event.Data)
 				}
-				ids := linq.Map(events.Data, func(event *EventMsg) string {
+				ids := slicex.Map(events.Data, func(event *EventMsg) string {
 					return event.ID
 				})
 				err = (*store).Delete(context.Background(), ids)
