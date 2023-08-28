@@ -7,6 +7,9 @@ import (
 	"math/big"
 )
 
+type ID = int64
+type StringID = string
+
 type IdGeneratorOptions struct {
 	WorkerId uint16
 }
