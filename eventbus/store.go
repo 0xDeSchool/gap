@@ -12,13 +12,13 @@ import (
 )
 
 type EventMsg struct {
-	ddd.EntityBase `bson:",inline"`
-	Topic          string            `bson:"topic" json:"topic"`
-	EventID        string            `bson:"eventID" json:"eventID"`
-	Data           string            `bson:"data" json:"data"`
-	PublishTime    *time.Time        `bson:"publishTime" json:"publishTime"`
-	ErrorMsg       string            `bson:"errorMsg" json:"errorMsg"`
-	Metadata       map[string]string `bson:"metadata" json:"metadata"`
+	ddd.EntityBase[int64] `bson:",inline"`
+	Topic                 string            `bson:"topic" json:"topic"`
+	EventID               string            `bson:"eventID" json:"eventID"`
+	Data                  string            `bson:"data" json:"data"`
+	PublishTime           *time.Time        `bson:"publishTime" json:"publishTime"`
+	ErrorMsg              string            `bson:"errorMsg" json:"errorMsg"`
+	Metadata              map[string]string `bson:"metadata" json:"metadata"`
 }
 
 type EventStore interface {
@@ -26,7 +26,7 @@ type EventStore interface {
 	Save(ctx context.Context, data *EventMsg) error
 
 	GetList(ctx context.Context, p *x.PageParam) (x.PagedResult[EventMsg], error)
-	Delete(ctx context.Context, id []string) error
+	Delete(ctx context.Context, id []int64) error
 }
 
 // ListenErrorEvents 监听错误事件，每天指定整点执行
@@ -52,7 +52,7 @@ func ListenErrorEvents(clock int) {
 					}
 					PublishJSON(context.Background(), event.Topic, event.Data)
 				}
-				ids := slicex.Map(events.Data, func(event *EventMsg) string {
+				ids := slicex.Map(events.Data, func(event *EventMsg) int64 {
 					return event.ID
 				})
 				err = (*store).Delete(context.Background(), ids)
