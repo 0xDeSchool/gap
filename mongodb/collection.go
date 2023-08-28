@@ -98,7 +98,7 @@ func (c *Collection[TEntity, TKey]) Count(ctx context.Context, filter bson.D, op
 }
 
 func (c *Collection[TEntity, TKey]) Insert(ctx context.Context, entity *TEntity, opts ...*options.InsertOneOptions) (*TEntity, error) {
-	ddd.SetAudited(ctx, entity)
+	ddd.SetAudited[TKey](ctx, entity)
 	_, err := c.Col().InsertOne(ctx, entity, opts...)
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []*
 	if len(entities) == 0 {
 		return entities, nil
 	}
-	data := ddd.SetAuditedMany(ctx, entities)
+	data := ddd.SetAuditedManyPtr[TEntity, TKey](ctx, entities)
 	opt := options.InsertMany().SetOrdered(!ignoreErr)
 	opts = append(opts, opt)
 	result, err := c.Col().InsertMany(ctx, data, opts...)
@@ -129,7 +129,7 @@ func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []*
 
 func (c *Collection[TEntity, TKey]) UpdateOne(ctx context.Context, filter bson.D, entity *TEntity, opts ...*options.UpdateOptions) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
-	ddd.SetAudited(ctx, entity)
+	ddd.SetAudited[TKey](ctx, entity)
 	result, err := c.Col().UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: entity}}, opts...)
 	if err != nil {
 		return 0, err
@@ -150,13 +150,13 @@ func (c *Collection[TEntity, TKey]) UpdateMany(ctx context.Context, filter bson.
 func (c *Collection[TEntity, TKey]) DeleteOne(ctx context.Context, filter bson.D) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	var v any = (*TEntity)(nil)
-	if _, ok := v.(ddd.ISoftDeleteEntity); ok {
+	if _, ok := v.(ddd.ISoftDeleteEntity[TKey]); ok {
 		e, err := c.FindOne(ctx, filter)
 		if err != nil {
 			return 0, err
 		}
 		var se any = e
-		softEntity := se.(ddd.ISoftDeleteEntity)
+		softEntity := se.(ddd.ISoftDeleteEntity[TKey])
 		softEntity.Deleting(ctx)
 		count, err := c.UpdateOne(ctx, filter, e)
 		if err != nil {
@@ -175,7 +175,7 @@ func (c *Collection[TEntity, TKey]) DeleteOne(ctx context.Context, filter bson.D
 func (c *Collection[TEntity, TKey]) DeleteMany(ctx context.Context, filter bson.D) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	var v any = (*TEntity)(nil)
-	if _, ok := v.(ddd.ISoftDeleteEntity); ok {
+	if _, ok := v.(ddd.ISoftDeleteEntity[TKey]); ok {
 		es, err := c.Find(ctx, filter, nil)
 		if err != nil {
 			return 0, err
@@ -184,7 +184,7 @@ func (c *Collection[TEntity, TKey]) DeleteMany(ctx context.Context, filter bson.
 		uw.Start(ctx)
 		var count = 0
 		for i := range es {
-			softEntity := v.(ddd.ISoftDeleteEntity)
+			softEntity := v.(ddd.ISoftDeleteEntity[TKey])
 			softEntity.Deleting(ctx)
 			idFilter := bson.D{{"_id", softEntity.GetId()}}
 			ct, err := c.UpdateOne(ctx, idFilter, es[i])
@@ -221,7 +221,7 @@ func (c *Collection[TEntity, TKey]) SetAllFilter(ctx context.Context, filter bso
 
 func (c *Collection[TEntity, TKey]) SetSoftDeleteFilter(filter bson.D) bson.D {
 	var v any = (*TEntity)(nil)
-	if _, ok := v.(ddd.SoftDeleteEntity); ok {
+	if _, ok := v.(ddd.SoftDeleteEntity[TKey]); ok {
 		return append(filter, bson.E{Key: ddd.SoftDeleteFieldName, Value: false})
 	}
 	return filter
@@ -265,7 +265,7 @@ func (c *Collection[TEntity, TKey]) ParseSort(p *x.PageAndSort) bson.D {
 		}
 		sort = append(sort, bson.E{Key: k, Value: desc})
 	}
-	if x.CanConvert[TEntity, ddd.CreationAuditedEntity]() && !strings.Contains(p.Sort, "createdAt") {
+	if x.CanConvert[TEntity, ddd.CreationAuditedEntity[TKey]]() && !strings.Contains(p.Sort, "createdAt") {
 		sort = append(sort, bson.E{Key: "createdAt", Value: -1})
 	}
 	return sort

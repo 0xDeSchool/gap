@@ -9,30 +9,30 @@ import (
 	"github.com/0xDeSchool/gap/ginx"
 )
 
-type CreationAuditedEntity interface {
+type CreationAuditedEntity[TKey comparable] interface {
 	Creating(ctx context.Context)
 }
 
-type UpdationAuditedEntity interface {
+type UpdationAuditedEntity[TKey comparable] interface {
 	Updating(ctx context.Context)
 }
 
-type ISoftDeleteEntity interface {
-	Entity
+type ISoftDeleteEntity[TKey comparable] interface {
+	Entity[TKey]
 	Deleting(ctx context.Context)
 }
 
-type AuditEntityBase struct {
-	EntityBase `bson:",inline"`
-	CreatorId  string    `bson:"creatorId"`
-	CreatedAt  time.Time `bson:"createdAt"`
+type AuditEntityBase[TKey comparable] struct {
+	EntityBase[TKey] `bson:",inline"`
+	CreatorId        string    `bson:"creatorId"`
+	CreatedAt        time.Time `bson:"createdAt"`
 }
 
-func (e AuditEntityBase) GetId() string {
+func (e *AuditEntityBase[TKey]) GetId() TKey {
 	return e.ID
 }
 
-func (e *AuditEntityBase) Creating(ctx context.Context) {
+func (e *AuditEntityBase[TKey]) Creating(ctx context.Context) {
 	if e.CreatedAt.IsZero() {
 		e.CreatedAt = time.Now()
 	}
@@ -41,13 +41,13 @@ func (e *AuditEntityBase) Creating(ctx context.Context) {
 	}
 }
 
-type FullAuditEntityBase struct {
-	AuditEntityBase `bson:",inline"`
-	UpdatedAt       time.Time `bson:"updatedAt,omitempty"`
-	UpdaterId       string    `bson:"updaterId,omitempty"`
+type FullAuditEntityBase[TKey comparable] struct {
+	AuditEntityBase[TKey] `bson:",inline"`
+	UpdatedAt             time.Time `bson:"updatedAt,omitempty"`
+	UpdaterId             string    `bson:"updaterId,omitempty"`
 }
 
-func (e *FullAuditEntityBase) Updating(ctx context.Context) {
+func (e *FullAuditEntityBase[TKey]) Updating(ctx context.Context) {
 	if e.UpdatedAt.IsZero() {
 		e.UpdatedAt = time.Now()
 	}
@@ -58,13 +58,13 @@ func (e *FullAuditEntityBase) Updating(ctx context.Context) {
 
 const SoftDeleteFieldName = "isDeleted"
 
-type SoftDeleteEntity struct {
+type SoftDeleteEntity[TKey comparable] struct {
 	IsDeleted  bool      `bson:"isDeleted"`
 	DeletionAt time.Time `bson:"deletedAt,omitempty"`
 	DeleterId  string    `bson:"deleterId,omitempty"`
 }
 
-func (e *SoftDeleteEntity) Deleting(ctx context.Context) {
+func (e *SoftDeleteEntity[TKey]) Deleting(ctx context.Context) {
 	if e.DeletionAt.IsZero() {
 		e.DeletionAt = time.Now()
 	}
@@ -82,17 +82,18 @@ func WithHardDelete(ctx context.Context) context.Context {
 	return context.WithValue(ctx, hardKey, true)
 }
 
-func SetAudited(ctx context.Context, e any) {
-	ig := *app.Get[x.IdGenerator[string]]()
-	if ae, ok := e.(Entity); ok {
-		if ae.GetId() == "" {
+func SetAudited[TKey comparable](ctx context.Context, e any) {
+	ig := *app.Get[x.IdGenerator[TKey]]()
+	if ae, ok := e.(Entity[TKey]); ok {
+		var defaultId TKey
+		if ae.GetId() == defaultId {
 			ae.SetId(ig.Create())
 		}
 	}
-	if ae, ok := e.(CreationAuditedEntity); ok {
+	if ae, ok := e.(CreationAuditedEntity[TKey]); ok {
 		ae.Creating(ctx)
 	}
-	if ue, ok := e.(UpdationAuditedEntity); ok {
+	if ue, ok := e.(UpdationAuditedEntity[TKey]); ok {
 		ue.Updating(ctx)
 	}
 
@@ -103,11 +104,11 @@ func SetAudited(ctx context.Context, e any) {
 
 // SetAuditedMany is a helper function to set audit fields for a slice of pointers.
 // T is not struct ptr
-func SetAuditedMany[T any](ctx context.Context, data []T) []any {
+func SetAuditedMany[T any, TKey comparable](ctx context.Context, data []T) []any {
 	result := make([]any, len(data))
 	for i := range data {
 		v := &data[i]
-		SetAudited(ctx, v)
+		SetAudited[TKey](ctx, v)
 		result[i] = v
 	}
 	return result
@@ -115,11 +116,11 @@ func SetAuditedMany[T any](ctx context.Context, data []T) []any {
 
 // SetAuditedManyPtr is a helper function to set audit fields for a slice of pointers.
 // T is struct ptr
-func SetAuditedManyPtr[T any](ctx context.Context, data []T) []any {
+func SetAuditedManyPtr[T any, TKey comparable](ctx context.Context, data []*T) []any {
 	result := make([]any, len(data))
 	for i := range data {
 		v := data[i]
-		SetAudited(ctx, v)
+		SetAudited[TKey](ctx, v)
 		result[i] = v
 	}
 	return result
