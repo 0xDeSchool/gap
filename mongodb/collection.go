@@ -41,8 +41,8 @@ func (c *Collection[TEntity, TKey]) Find(ctx context.Context, filter bson.D, opt
 	return data, err
 }
 
-func (c *Collection[TEntity, TKey]) FindByPage(ctx context.Context, filter bson.D, p *x.PageAndSort, opts ...*options.FindOptions) (*x.PagedResult[TEntity], error) {
-	result := &x.PagedResult[TEntity]{}
+func (c *Collection[TEntity, TKey]) FindByPage(ctx context.Context, filter bson.D, p *x.PageAndSort, opts ...*options.FindOptions) (*x.PagedResult[*TEntity], error) {
+	result := &x.PagedResult[*TEntity]{}
 	findOptions := options.Find()
 	if p != nil {
 		findOptions.SetLimit(p.Limit() + 1).SetSkip(p.Skip())
@@ -66,6 +66,7 @@ func (c *Collection[TEntity, TKey]) FindByPage(ctx context.Context, filter bson.
 		data = data[:p.Limit()]
 		result.HasMore = true
 	}
+	result.Data = data
 	return result, nil
 }
 
