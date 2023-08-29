@@ -1,27 +1,27 @@
 package slicexp
 
-func Map[TSource any, TResult any](source []*TSource, selector func(*TSource) *TResult) []*TResult {
+func Map[TSource any, TResult any](source []*TSource, selector func(*TSource) TResult) []TResult {
 	if source == nil {
 		return nil
 	}
 	if selector == nil {
 		panic("parameter selector is nil")
 	}
-	result := make([]*TResult, len(source))
+	result := make([]TResult, len(source))
 	for i := 0; i < len(source); i++ {
 		result[i] = selector(source[i])
 	}
 	return result
 }
 
-func MapMany[TSource any, TResult any](source []*TSource, selector func(*TSource) []*TResult) []*TResult {
+func MapMany[TSource any, TResult any](source []*TSource, selector func(*TSource) []TResult) []TResult {
 	if source == nil {
 		panic("parameter source is nil")
 	}
 	if selector == nil {
 		panic("parameter selector is nil")
 	}
-	result := make([]*TResult, 0)
+	result := make([]TResult, 0)
 	for i := 0; i < len(source); i++ {
 		result = append(result, selector(source[i])...)
 	}
