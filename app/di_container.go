@@ -20,8 +20,6 @@ type Container struct {
 	initors  sync.Map
 	Services []ServiceDescriptor
 	values   sync.Map
-
-	lock sync.Mutex
 }
 
 func (c *Container) Get(serviceType reflect.Type) interface{} {
@@ -102,8 +100,6 @@ func (c *Container) create(serviceType reflect.Type, descriptor *ServiceDescript
 			v, _ = c.values.LoadOrStore(serviceType, c.createInstance(descriptor))
 		}
 		instance = v
-		c.lock.Lock()
-		defer c.lock.Unlock()
 		c.instanceInit(serviceType, instance, true)
 	} else if descriptor.Scope == Transient {
 		instance = c.createInstance(descriptor)
@@ -126,13 +122,14 @@ func (c *Container) createInstance(descriptor *ServiceDescriptor) interface{} {
 
 func (c *Container) instanceInit(serviceType reflect.Type, v any, delete bool) {
 	if delete {
-		if initor, ok := c.initors.LoadAndDelete(serviceType); ok {
+		if initor, ok := c.initors.Load(serviceType); ok {
 			if init, ok := initor.([]InitFunc); ok {
 				for i := 0; i < len(init); i++ {
 					init[i](c, v)
 				}
 			}
 		}
+		c.initors.Delete(serviceType)
 	} else {
 		if initor, ok := c.initors.Load(serviceType); ok {
 			if init, ok := initor.([]InitFunc); ok {
