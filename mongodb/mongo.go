@@ -50,7 +50,7 @@ func (mr *MongoRepositoryBase[TEntity, TKey]) Collection(ctx context.Context) *C
 	return NewCollection[TEntity, TKey](c, mr.StoreOpts)
 }
 
-func (mr *MongoRepositoryBase[TEntity, TKey]) GetPagedList(ctx context.Context, p *x.PageAndSort) (*x.PagedResult[TEntity], error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) GetPagedList(ctx context.Context, p *x.PageAndSort) (*x.PagedResult[*TEntity], error) {
 	filter := bson.D{}
 	return mr.Collection(ctx).FindByPage(ctx, filter, p)
 }
@@ -89,7 +89,7 @@ func (mr *MongoRepositoryBase[TEntity, TKey]) Count(ctx context.Context) (int64,
 	return mr.Collection(ctx).Count(ctx, filter)
 }
 
-func (mr *MongoRepositoryBase[TEntity, TKey]) FindByRegex(ctx context.Context, field, regex string, p *x.PageAndSort) (*x.PagedResult[TEntity], error) {
+func (mr *MongoRepositoryBase[TEntity, TKey]) FindByRegex(ctx context.Context, field, regex string, p *x.PageAndSort) (*x.PagedResult[*TEntity], error) {
 	filter := bson.D{{Key: field, Value: primitive.Regex{Pattern: regex, Options: "i"}}}
 	return mr.Collection(ctx).FindByPage(ctx, filter, p)
 }
