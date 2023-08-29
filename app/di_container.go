@@ -20,6 +20,8 @@ type Container struct {
 	initors  sync.Map
 	Services []ServiceDescriptor
 	values   sync.Map
+
+	lock sync.Mutex
 }
 
 func (c *Container) Get(serviceType reflect.Type) interface{} {
@@ -100,6 +102,8 @@ func (c *Container) create(serviceType reflect.Type, descriptor *ServiceDescript
 			v, _ = c.values.LoadOrStore(serviceType, c.createInstance(descriptor))
 		}
 		instance = v
+		c.lock.Lock()
+		defer c.lock.Unlock()
 		c.instanceInit(serviceType, instance, true)
 	} else if descriptor.Scope == Transient {
 		instance = c.createInstance(descriptor)
