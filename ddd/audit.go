@@ -24,7 +24,7 @@ type ISoftDeleteEntity[TKey comparable] interface {
 
 type AuditEntityBase[TKey comparable] struct {
 	EntityBase[TKey] `bson:",inline"`
-	CreatorId        string    `bson:"creatorId"`
+	CreatorId        TKey      `bson:"creatorId"`
 	CreatedAt        time.Time `bson:"createdAt"`
 }
 
@@ -36,23 +36,25 @@ func (e *AuditEntityBase[TKey]) Creating(ctx context.Context) {
 	if e.CreatedAt.IsZero() {
 		e.CreatedAt = time.Now()
 	}
-	if e.CreatorId == "" {
-		e.CreatorId = ginx.CurrentUser(ctx).ID
+	var dv TKey
+	if e.CreatorId == dv {
+		e.CreatorId = ginx.CurrentUser[TKey](ctx).ID
 	}
 }
 
 type FullAuditEntityBase[TKey comparable] struct {
 	AuditEntityBase[TKey] `bson:",inline"`
 	UpdatedAt             time.Time `bson:"updatedAt,omitempty"`
-	UpdaterId             string    `bson:"updaterId,omitempty"`
+	UpdaterId             TKey      `bson:"updaterId,omitempty"`
 }
 
 func (e *FullAuditEntityBase[TKey]) Updating(ctx context.Context) {
 	if e.UpdatedAt.IsZero() {
 		e.UpdatedAt = time.Now()
 	}
-	if e.UpdaterId == "" {
-		e.UpdaterId = ginx.CurrentUser(ctx).ID
+	var dv TKey
+	if e.UpdaterId == dv {
+		e.UpdaterId = ginx.CurrentUser[TKey](ctx).ID
 	}
 }
 
@@ -61,15 +63,16 @@ const SoftDeleteFieldName = "isDeleted"
 type SoftDeleteEntity[TKey comparable] struct {
 	IsDeleted  bool      `bson:"isDeleted"`
 	DeletionAt time.Time `bson:"deletedAt,omitempty"`
-	DeleterId  string    `bson:"deleterId,omitempty"`
+	DeleterId  TKey      `bson:"deleterId,omitempty"`
 }
 
 func (e *SoftDeleteEntity[TKey]) Deleting(ctx context.Context) {
 	if e.DeletionAt.IsZero() {
 		e.DeletionAt = time.Now()
 	}
-	if e.DeleterId == "" {
-		e.DeleterId = ginx.CurrentUser(ctx).ID
+	var dv TKey
+	if e.DeleterId == dv {
+		e.DeleterId = ginx.CurrentUser[TKey](ctx).ID
 	}
 	e.IsDeleted = true
 }
