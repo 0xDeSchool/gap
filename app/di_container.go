@@ -20,6 +20,8 @@ type Container struct {
 	initors  sync.Map
 	Services []ServiceDescriptor
 	values   sync.Map
+
+	lock sync.Mutex
 }
 
 func (c *Container) Get(serviceType reflect.Type) interface{} {
@@ -122,14 +124,15 @@ func (c *Container) createInstance(descriptor *ServiceDescriptor) interface{} {
 
 func (c *Container) instanceInit(serviceType reflect.Type, v any, delete bool) {
 	if delete {
-		if initor, ok := c.initors.Load(serviceType); ok {
+		c.lock.Lock() // lock for init, Warn: 当一个单例依赖另一个单例时，可能会死锁
+		defer c.lock.Unlock()
+		if initor, ok := c.initors.LoadAndDelete(serviceType); ok {
 			if init, ok := initor.([]InitFunc); ok {
 				for i := 0; i < len(init); i++ {
 					init[i](c, v)
 				}
 			}
 		}
-		c.initors.Delete(serviceType)
 	} else {
 		if initor, ok := c.initors.Load(serviceType); ok {
 			if init, ok := initor.([]InitFunc); ok {
