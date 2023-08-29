@@ -146,8 +146,8 @@ func GetPtrOptional[T interface{}]() (T, bool) {
 		var defaultValue T
 		return defaultValue, ok
 	}
-	v, ok = v.(T)
-	return v, ok
+	v2, ok2 := v.(T)
+	return v2, ok2
 }
 
 func GetByType[T interface{}](serviceType reflect.Type) *T {
