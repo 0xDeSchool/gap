@@ -5,38 +5,37 @@ import (
 	"github.com/0xDeSchool/gap/multi_tenancy"
 )
 
-type CurrentUserInfo struct {
-	ID       string
+type CurrentUserInfo[TKey comparable] struct {
+	ID       TKey
 	UserName string
 	Address  string
 	Avatar   string
 	Data     map[string]any
 }
 
-func (u *CurrentUserInfo) Authenticated() bool {
-	return u.ID != ""
+func (u *CurrentUserInfo[TKey]) Authenticated() bool {
+	var dv TKey
+	return u.ID != dv
 }
 
-func (u *CurrentUserInfo) Get(key string) any {
+func (u *CurrentUserInfo[TKey]) Get(key string) any {
 	if u.Data == nil {
 		return nil
 	}
 	return u.Data[key]
 }
 
-func (u *CurrentUserInfo) Set(key string, value any) {
+func (u *CurrentUserInfo[TKey]) Set(key string, value any) {
 	if u.Data == nil {
 		u.Data = make(map[string]any)
 	}
 	u.Data[key] = value
 }
 
-func CurrentUser(c context.Context) *CurrentUserInfo {
-	user, ok := c.Value("Login.User").(*CurrentUserInfo)
+func CurrentUser[TKey comparable](c context.Context) *CurrentUserInfo[TKey] {
+	user, ok := c.Value("Login.User").(*CurrentUserInfo[TKey])
 	if !ok {
-		return &CurrentUserInfo{
-			ID: "",
-		}
+		return &CurrentUserInfo[TKey]{}
 	}
 	return user
 }
