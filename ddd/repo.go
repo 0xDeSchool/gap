@@ -9,7 +9,7 @@ import (
 
 type RepositoryBase[TEntity any, TKey comparable] interface {
 	GetPagedList(ctx context.Context, p *x.PageAndSort) (*x.PagedResult[TEntity], error)
-	GetById(ctx context.Context, id string) (*TEntity, error)
+	GetById(ctx context.Context, id TKey) (*TEntity, error)
 	GetOrNilById(ctx context.Context, id TKey) (*TEntity, error)
 	GetMany(ctx context.Context, ids []TKey) ([]*TEntity, error)
 	Exists(ctx context.Context, id TKey) (bool, error)
