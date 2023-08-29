@@ -63,6 +63,5 @@ func (b *ServerBuilder) Build() (*Server, error) {
 		}
 	}
 
-	server.initMiddlewares()
 	return server, nil
 }

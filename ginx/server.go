@@ -1,7 +1,6 @@
 package ginx
 
 import (
-	"sort"
 	"strconv"
 
 	"github.com/0xDeSchool/gap/log"
@@ -43,29 +42,6 @@ func NewServer(g *gin.Engine, options *ServerOptions) *Server {
 	return &Server{
 		G:       g,
 		Options: options,
-	}
-}
-
-func (s *Server) Use(handlers ...gin.HandlerFunc) *Server {
-	for _, handler := range handlers {
-		s.middlewares = append(s.middlewares, serverHandler{Order: 0, Func: handler})
-	}
-	return s
-}
-
-func (s *Server) OrderedUse(order int, handlers ...gin.HandlerFunc) *Server {
-	for _, handler := range handlers {
-		s.middlewares = append(s.middlewares, serverHandler{Order: order, Func: handler})
-	}
-	return s
-}
-
-func (s *Server) initMiddlewares() {
-	sort.SliceStable(s.middlewares, func(i, j int) bool {
-		return s.middlewares[i].Order < s.middlewares[j].Order
-	})
-	for _, handler := range s.middlewares {
-		s.G.Use(handler.Func)
 	}
 }
 

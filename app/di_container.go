@@ -124,7 +124,7 @@ func (c *Container) createInstance(descriptor *ServiceDescriptor) interface{} {
 
 func (c *Container) instanceInit(serviceType reflect.Type, v any, delete bool) {
 	if delete {
-		c.lock.Lock() // lock for init, Warn: 当一个单例依赖另一个单例时，可能会死锁
+		c.lock.Lock() // lock for init, Warn: 当一个单例依赖另一个单例并且都需要配置时，可能会死锁
 		defer c.lock.Unlock()
 		if initor, ok := c.initors.LoadAndDelete(serviceType); ok {
 			if init, ok := initor.([]InitFunc); ok {
