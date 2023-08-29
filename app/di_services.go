@@ -143,11 +143,11 @@ func GetOptional[T interface{}]() (*T, bool) {
 func GetPtrOptional[T interface{}]() (T, bool) {
 	v, ok := container.GetOptional(getServiceType[T]())
 	if !ok {
-		var defaultValue T
-		return defaultValue, ok
+		var dv T
+		return dv, ok
 	}
-	v2, ok2 := v.(T)
-	return v2, ok2
+	v2, ok2 := v.(*T)
+	return *v2, ok2
 }
 
 func GetByType[T interface{}](serviceType reflect.Type) *T {
