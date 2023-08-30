@@ -11,15 +11,17 @@ import (
 
 const testError = "test publish error"
 
-func InitEventBus(serviceName string) {
+func SetClient(serviceName string, provider pubsub.Provider) {
+	if provider == nil {
+		provider = NewMemoryProvider()
+	}
 	pubsub.SetClient(&pubsub.Client{
 		ServiceName: serviceName,
-		Provider:    NewMemoryProvider(),
+		Provider:    provider,
 		Middleware: []pubsub.Middleware{
 			recover.Middleware{},
 		},
 	})
-	go ListenErrorEvents(0)
 }
 
 func Publish[T any](ctx context.Context, obj *T) {

@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"errors"
+	"github.com/0xDeSchool/gap/eventbus"
 	"github.com/0xDeSchool/gap/multi_tenancy"
 	"strings"
 
@@ -104,6 +105,8 @@ func (c *Collection[TEntity, TKey]) Insert(ctx context.Context, entity *TEntity,
 	if err != nil {
 		return nil, err
 	}
+	// 发布实体创建事件
+	eventbus.Publish(ctx, eventbus.Created(entity))
 	return entity, nil
 }
 
@@ -124,6 +127,10 @@ func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []*
 	}
 	if result == nil {
 		return entities, nil
+	} else {
+		for i := range entities {
+			eventbus.Publish(context.Background(), eventbus.Created(&entities[i]))
+		}
 	}
 	return entities, nil
 }
@@ -135,9 +142,14 @@ func (c *Collection[TEntity, TKey]) UpdateOne(ctx context.Context, filter bson.D
 	if err != nil {
 		return 0, err
 	}
+	if result.ModifiedCount > 0 {
+		// 发布实体更新事件
+		eventbus.Publish(ctx, eventbus.Updated(entity))
+	}
 	return int(result.ModifiedCount), nil
 }
 
+// UpdateMany TODO: 事件改造
 func (c *Collection[TEntity, TKey]) UpdateMany(ctx context.Context, filter bson.D, update interface{}, opts ...*options.UpdateOptions) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	set := bson.D{{Key: "$set", Value: update}}
@@ -151,11 +163,11 @@ func (c *Collection[TEntity, TKey]) UpdateMany(ctx context.Context, filter bson.
 func (c *Collection[TEntity, TKey]) DeleteOne(ctx context.Context, filter bson.D) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	var v any = (*TEntity)(nil)
+	e, err := c.FindOne(ctx, filter)
+	if err != nil {
+		return 0, err
+	}
 	if _, ok := v.(ddd.ISoftDeleteEntity[TKey]); ok {
-		e, err := c.FindOne(ctx, filter)
-		if err != nil {
-			return 0, err
-		}
 		var se any = e
 		softEntity := se.(ddd.ISoftDeleteEntity[TKey])
 		softEntity.Deleting(ctx)
@@ -163,12 +175,14 @@ func (c *Collection[TEntity, TKey]) DeleteOne(ctx context.Context, filter bson.D
 		if err != nil {
 			return 0, err
 		}
+		eventbus.Publish(context.Background(), eventbus.Deleted(e))
 		return count, nil
 	} else {
 		result, err := c.Col().DeleteOne(ctx, filter)
 		if err != nil {
 			return 0, err
 		}
+		eventbus.Publish(context.Background(), eventbus.Deleted(e))
 		return int(result.DeletedCount), nil
 	}
 }
@@ -176,11 +190,11 @@ func (c *Collection[TEntity, TKey]) DeleteOne(ctx context.Context, filter bson.D
 func (c *Collection[TEntity, TKey]) DeleteMany(ctx context.Context, filter bson.D) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	var v any = (*TEntity)(nil)
+	es, err := c.Find(ctx, filter, nil)
+	if err != nil {
+		return 0, err
+	}
 	if _, ok := v.(ddd.ISoftDeleteEntity[TKey]); ok {
-		es, err := c.Find(ctx, filter, nil)
-		if err != nil {
-			return 0, err
-		}
 		uw := ginx.NewUnitWork(ctx)
 		uw.Start(ctx)
 		var count = 0
@@ -199,11 +213,17 @@ func (c *Collection[TEntity, TKey]) DeleteMany(ctx context.Context, filter bson.
 		if err != nil {
 			return 0, err
 		}
+		for _, e := range es {
+			eventbus.Publish(context.Background(), eventbus.Deleted(e))
+		}
 		return count, nil
 	} else {
 		result, err := c.Col().DeleteMany(ctx, filter)
 		if err != nil {
 			return 0, nil
+		}
+		for _, e := range es {
+			eventbus.Publish(context.Background(), eventbus.Deleted(e))
 		}
 		return int(result.DeletedCount), nil
 	}

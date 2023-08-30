@@ -2,14 +2,11 @@ package eventbus
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/0xDeSchool/gap/app"
 	"sync"
 	"time"
 
 	"github.com/0xDeSchool/gap/errx"
-	"github.com/0xDeSchool/gap/log"
 	"github.com/0xDeSchool/gap/x"
 	"github.com/lileio/pubsub/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -36,28 +33,13 @@ func NewHandlerOption[T any](handler func(ctx context.Context, msg *T) error) pu
 
 func (s *handlerOption[T]) handle(ctx context.Context, msg *T, pm *pubsub.Msg) error {
 	err := s.MsgHandler(ctx, msg)
-	if err != nil {
-		if store, ok := app.GetOptional[EventStore](); ok {
-			msgStr, _ := json.Marshal(msg)
-			saveErr := (*store).Save(ctx, &EventMsg{
-				Topic:       s.topic,
-				Data:        string(msgStr),
-				EventID:     pm.ID,
-				PublishTime: pm.PublishTime,
-				Metadata:    pm.Metadata,
-				ErrorMsg:    err.Error(),
-			})
-			if saveErr != nil {
-				log.Warn("save event failed", saveErr)
-			}
-		}
-	}
 	return err
 }
 
 type MemoryProvider struct {
-	mutex    sync.RWMutex
-	handlers map[string][]pubsub.MsgHandler
+	mutex        sync.RWMutex
+	handlers     map[string][]pubsub.MsgHandler
+	ErrorHandler func(ctx context.Context, msg *pubsub.Msg, err error)
 }
 
 func NewMemoryProvider() *MemoryProvider {
@@ -79,6 +61,9 @@ func (mp *MemoryProvider) Publish(ctx context.Context, topic string, m *pubsub.M
 	for _, h := range mp.handlers[topic] {
 		err := h(ctx, *m)
 		if err != nil {
+			if mp.ErrorHandler != nil {
+				mp.ErrorHandler(ctx, m, err)
+			}
 			errs = append(errs, err)
 		}
 	}
