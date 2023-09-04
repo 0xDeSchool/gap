@@ -7,7 +7,7 @@ import (
 )
 
 type AuthHandlerContext[TKey comparable] struct {
-	ctx        context.Context
+	ctx        *gin.Context
 	User       *CurrentUserInfo[TKey]
 	HasHandled bool
 }
