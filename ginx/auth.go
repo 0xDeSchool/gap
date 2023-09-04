@@ -17,13 +17,13 @@ func (ac *AuthHandlerContext[TKey]) Ctx() context.Context {
 }
 
 type AuthHandler[TKey comparable] interface {
-	Handle(ctx AuthHandlerContext[TKey])
+	Handle(ctx *AuthHandlerContext[TKey])
 }
 
 func AuthFunc[TKey comparable]() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		handlers := app.GetArray[AuthHandler[TKey]]()
-		ctx := AuthHandlerContext[TKey]{
+		ctx := &AuthHandlerContext[TKey]{
 			ctx: c,
 		}
 		for i := range handlers {
