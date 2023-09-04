@@ -12,7 +12,7 @@ type AuthHandlerContext[TKey comparable] struct {
 	HasHandled bool
 }
 
-func (ac *AuthHandlerContext[TKey]) Ctx() context.Context {
+func (ac *AuthHandlerContext[TKey]) Ctx() *gin.Context {
 	return ac.ctx
 }
 
