@@ -18,10 +18,10 @@ type IdGenerator[T comparable] interface {
 	Create() T
 }
 
-type StringIdGenerator[T string] struct {
+type StringIdGenerator[T ~string] struct {
 }
 
-func NewStringIdGenerator[T string]() *IdGenerator[T] {
+func NewStringIdGenerator[T ~string]() *IdGenerator[T] {
 	workerId := app.Get[IdGeneratorOptions]().WorkerId
 	var options = idgen.NewIdGeneratorOptions(workerId)
 	// 保存参数（务必调用，否则参数设置不生效）：
@@ -39,10 +39,10 @@ func (u *StringIdGenerator[T]) Create() T {
 	return T(idStr)
 }
 
-type Int64IdGenerator[T int64] struct {
+type Int64IdGenerator[T ~int64] struct {
 }
 
-func NewNumberIdGenerator[T int64]() *IdGenerator[T] {
+func NewNumberIdGenerator[T ~int64]() *IdGenerator[T] {
 	workerId := app.Get[IdGeneratorOptions]().WorkerId
 	var options = idgen.NewIdGeneratorOptions(workerId)
 	// 保存参数（务必调用，否则参数设置不生效）：
