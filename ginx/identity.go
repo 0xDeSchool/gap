@@ -5,6 +5,10 @@ import (
 	"github.com/0xDeSchool/gap/multi_tenancy"
 )
 
+type userKeyType struct{}
+
+var userKey = userKeyType{}
+
 type CurrentUserInfo[TKey comparable] struct {
 	ID       TKey
 	UserName string
@@ -33,7 +37,7 @@ func (u *CurrentUserInfo[TKey]) Set(key string, value any) {
 }
 
 func CurrentUser[TKey comparable](c context.Context) *CurrentUserInfo[TKey] {
-	user, ok := c.Value("Login.User").(*CurrentUserInfo[TKey])
+	user, ok := c.Value(userKey).(*CurrentUserInfo[TKey])
 	if !ok {
 		return &CurrentUserInfo[TKey]{}
 	}
