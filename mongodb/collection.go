@@ -54,12 +54,13 @@ func (c *Collection[TEntity, TKey]) FindByPage(ctx context.Context, filter bson.
 			}
 			result.Total = total
 		}
+		if p.Page <= 0 { // 页数小于等于0，不进行查询
+			return result, nil
+		}
 		sort := c.ParseSort(p)
 		findOptions.SetSort(sort)
 	}
-	if p.Page <= 0 { // 页数小于等于0，不进行查询
-		return result, nil
-	}
+
 	newOpts := []*options.FindOptions{findOptions}
 	newOpts = append(newOpts, opts...)
 	data, err := c.Find(ctx, filter, newOpts...)
