@@ -3,7 +3,6 @@ package eventbus
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/0xDeSchool/gap/errx"
@@ -37,7 +36,6 @@ func (s *handlerOption[T]) handle(ctx context.Context, msg *T, pm *pubsub.Msg) e
 }
 
 type MemoryProvider struct {
-	mutex        sync.RWMutex
 	handlers     map[string][]pubsub.MsgHandler
 	ErrorHandler func(ctx context.Context, msg *pubsub.Msg, err error)
 }
@@ -49,8 +47,6 @@ func NewMemoryProvider() *MemoryProvider {
 }
 
 func (mp *MemoryProvider) Publish(ctx context.Context, topic string, m *pubsub.Msg) error {
-	mp.mutex.Lock()
-	defer mp.mutex.Unlock()
 	errs := make([]error, 0)
 	if m.PublishTime == nil {
 		m.PublishTime = x.Ptr(time.Now())
@@ -74,9 +70,6 @@ func (mp *MemoryProvider) Publish(ctx context.Context, topic string, m *pubsub.M
 }
 
 func (mp *MemoryProvider) Subscribe(opts pubsub.HandlerOptions, h pubsub.MsgHandler) {
-	mp.mutex.RLock()
-	defer mp.mutex.RUnlock()
-
 	mp.handlers[opts.Topic] = append(mp.handlers[opts.Topic], h)
 }
 
