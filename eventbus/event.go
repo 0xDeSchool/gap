@@ -30,13 +30,11 @@ func Publish[T any](ctx context.Context, obj *T) {
 }
 
 func PublishJSON(ctx context.Context, topic string, obj interface{}) {
-	go func() {
-		result := pubsub.PublishJSON(ctx, topic, obj)
-		<-result.Ready
-		if result.Err != nil {
-			log.Warnf("publish message failed, topic: %s, error: %s", topic, result.Err.Error())
-		}
-	}()
+	result := pubsub.PublishJSON(ctx, topic, obj)
+	<-result.Ready
+	if result.Err != nil {
+		log.Warnf("publish message failed, topic: %s, error: %s", topic, result.Err.Error())
+	}
 }
 
 func Subscribe[T any](handler func(ctx context.Context, msg *T) error) {

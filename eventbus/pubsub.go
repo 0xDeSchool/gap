@@ -2,10 +2,8 @@ package eventbus
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/0xDeSchool/gap/errx"
 	"github.com/0xDeSchool/gap/x"
 	"github.com/lileio/pubsub/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -47,7 +45,11 @@ func NewMemoryProvider() *MemoryProvider {
 }
 
 func (mp *MemoryProvider) Publish(ctx context.Context, topic string, m *pubsub.Msg) error {
-	errs := make([]error, 0)
+	go mp.handle(ctx, topic, m)
+	return nil
+}
+
+func (mp *MemoryProvider) handle(ctx context.Context, topic string, m *pubsub.Msg) {
 	if m.PublishTime == nil {
 		m.PublishTime = x.Ptr(time.Now())
 	}
@@ -60,13 +62,8 @@ func (mp *MemoryProvider) Publish(ctx context.Context, topic string, m *pubsub.M
 			if mp.ErrorHandler != nil {
 				mp.ErrorHandler(ctx, m, err)
 			}
-			errs = append(errs, err)
 		}
 	}
-	if len(errs) > 0 {
-		return errx.Errors(fmt.Sprintf("handle memory MQ message occurs %d error", len(errs)), errs...)
-	}
-	return nil
 }
 
 func (mp *MemoryProvider) Subscribe(opts pubsub.HandlerOptions, h pubsub.MsgHandler) {
