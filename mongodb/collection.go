@@ -164,6 +164,16 @@ func (c *Collection[TEntity, TKey]) UpdateMany(ctx context.Context, filter bson.
 	return int(result.ModifiedCount), nil
 }
 
+// UpdateMany TODO: 事件改造
+func (c *Collection[TEntity, TKey]) UpdateByFilter(ctx context.Context, filter bson.D, update interface{}, opts ...*options.UpdateOptions) (int, error) {
+	filter = c.SetAllFilter(ctx, filter)
+	result, err := c.Col().UpdateMany(ctx, filter, update, opts...)
+	if err != nil {
+		return 0, err
+	}
+	return int(result.ModifiedCount), nil
+}
+
 func (c *Collection[TEntity, TKey]) DeleteOne(ctx context.Context, filter bson.D) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	var v any = (*TEntity)(nil)
