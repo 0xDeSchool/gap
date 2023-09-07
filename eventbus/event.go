@@ -2,8 +2,8 @@ package eventbus
 
 import (
 	"context"
-
 	"github.com/0xDeSchool/gap/log"
+
 	"github.com/0xDeSchool/gap/x"
 	"github.com/lileio/pubsub/v2"
 	"github.com/lileio/pubsub/v2/middleware/recover"
@@ -30,11 +30,13 @@ func Publish[T any](ctx context.Context, obj *T) {
 }
 
 func PublishJSON(ctx context.Context, topic string, obj interface{}) {
-	result := pubsub.PublishJSON(ctx, topic, obj)
-	<-result.Ready
-	if result.Err != nil {
-		log.Warnf("publish message failed, topic: %s, error: %s", topic, result.Err.Error())
-	}
+	go func() {
+		result := pubsub.PublishJSON(ctx, topic, obj)
+		<-result.Ready
+		if result.Err != nil {
+			log.Warnf("publish message failed, topic: %s, error: %s", topic, result.Err.Error())
+		}
+	}()
 }
 
 func Subscribe[T any](handler func(ctx context.Context, msg *T) error) {
