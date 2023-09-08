@@ -73,7 +73,7 @@ func AddJwt(builder *ServerBuilder, configure func(*jwt.GinJWTMiddleware)) *JWTB
 	}
 	errx.CheckError(err)
 	builder.Items["JwtAuthMiddleware"] = authMiddleware
-	builder.App.ConfigureServices(func() error {
+	builder.App.Configure(func() error {
 		app.AddValue(authMiddleware)
 		return nil
 	})

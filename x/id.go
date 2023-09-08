@@ -54,12 +54,3 @@ func NewNumberIdGenerator[T ~int64]() *IdGenerator[T] {
 func (u *Int64IdGenerator[T]) Create() T {
 	return T(idgen.NextId())
 }
-
-func DefaultIdGenerators(ab *app.AppBuilder) {
-	ab.ConfigureServices(func() error {
-		app.TryAddValue(&IdGeneratorOptions{WorkerId: 1})
-		app.TryAddSingleton(NewStringIdGenerator[string])
-		app.TryAddSingleton(NewNumberIdGenerator[int64])
-		return nil
-	})
-}

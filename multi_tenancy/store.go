@@ -2,8 +2,8 @@ package multi_tenancy
 
 import "context"
 
-var TenantKey = struct{}{}
-var TenantFilterKey = struct{}{}
+var TenantKey = "Tenant"
+var TenantFilterKey = "TenantFilter"
 
 func WithTenant(ctx context.Context, tenant *TenantInfo) context.Context {
 	return context.WithValue(ctx, TenantKey, tenant)

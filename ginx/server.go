@@ -34,8 +34,6 @@ type serverHandler struct {
 type Server struct {
 	G       *gin.Engine
 	Options *ServerOptions
-
-	middlewares []serverHandler
 }
 
 func NewServer(g *gin.Engine, options *ServerOptions) *Server {

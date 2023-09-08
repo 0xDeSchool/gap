@@ -71,6 +71,6 @@ func (a *AppBuilder) BindOptions(key string, options interface{}) {
 	})
 }
 
-func (a *AppBuilder) ConfigureServices(action RunFunc) {
+func (a *AppBuilder) Configure(action RunFunc) {
 	a.Context.PreRun(action)
 }

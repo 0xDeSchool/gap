@@ -26,7 +26,7 @@ func TryAddService(descriptor ServiceDescriptor) *Container {
 	return container
 }
 
-func Configure[T any](f func(container *Container, v *T)) {
+func ConfigureOptions[T any](f func(container *Container, v *T)) {
 	container.Configure(getServiceType[T](), func(container *Container, instance any) {
 		f(container, instance.(*T))
 	})

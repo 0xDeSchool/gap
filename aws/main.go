@@ -12,7 +12,7 @@ import (
 )
 
 func AWS_SDK(b *app.AppBuilder) {
-	b.ConfigureServices(func() error {
+	b.Configure(func() error {
 		opts := &AwsOptions{
 			Url: "https://deschool.s3.amazonaws.com",
 		}
