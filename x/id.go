@@ -11,7 +11,23 @@ type ID = int64
 type StringID = string
 
 type IdGeneratorOptions struct {
-	WorkerId uint16
+	WorkerId          uint16
+	WorkerIdBitLength byte // 机器码位长，默认值6，取值范围 [1, 15]（要求：序列数位长+机器码位长不超过22）
+	SeqBitLength      byte // 序列数位长，默认值6，取值范围 [3, 21]（要求：序列数位长+机器码位长不超过22）
+}
+
+func (io *IdGeneratorOptions) toOptions() *idgen.IdGeneratorOptions {
+	opts := idgen.NewIdGeneratorOptions(1)
+	if io.WorkerId != 0 {
+		opts.WorkerId = io.WorkerId
+	}
+	if io.WorkerIdBitLength != 0 {
+		opts.WorkerIdBitLength = io.WorkerIdBitLength
+	}
+	if io.SeqBitLength != 0 {
+		opts.SeqBitLength = io.SeqBitLength
+	}
+	return opts
 }
 
 type IdGenerator[T comparable] interface {
@@ -22,8 +38,7 @@ type StringIdGenerator[T ~string] struct {
 }
 
 func NewStringIdGenerator[T ~string]() *IdGenerator[T] {
-	workerId := app.Get[IdGeneratorOptions]().WorkerId
-	var options = idgen.NewIdGeneratorOptions(workerId)
+	options := app.Get[IdGeneratorOptions]().toOptions()
 	// 保存参数（务必调用，否则参数设置不生效）：
 	idgen.SetIdGenerator(options)
 	var g IdGenerator[T] = &StringIdGenerator[T]{}

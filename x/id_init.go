@@ -7,13 +7,11 @@ import (
 
 func init() {
 	app.Configure(func() error {
-		opts := &IdGeneratorOptions{
-			WorkerId: 1,
-		}
+		opts := &IdGeneratorOptions{}
 		utils.ViperBind("IdGenerator", opts)
-		app.TryAddValue(opts)
-		app.TryAddSingleton(NewStringIdGenerator[string])
-		app.TryAddSingleton(NewNumberIdGenerator[int64])
+		app.AddValue(opts)
+		app.AddSingleton(NewStringIdGenerator[string])
+		app.AddSingleton(NewNumberIdGenerator[int64])
 		return nil
 	})
 }
