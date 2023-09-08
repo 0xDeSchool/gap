@@ -64,7 +64,8 @@ func (uw *unitWorkManager) AbortAll(ctx context.Context) {
 func UnitWorkMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		um := newUnitWorkManager()
-		ctx.Set(UnitWorkKey, um)
+		newCtx := context.WithValue(ctx.Request.Context(), UnitWorkKey, um)
+		ctx.Request = ctx.Request.WithContext(newCtx)
 		OnError(ctx, func(ctx *gin.Context, errs ...error) {
 			um.AbortAll(context.Background())
 		})
