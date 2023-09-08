@@ -23,10 +23,10 @@ func init() {
 	})
 }
 
-func ConfigRoutes(action ServerConfigureFunc) {
+func PreConfigure(action ServerConfigureFunc) {
 	builder.PreConfigure(action)
 }
 
-func OnInitialed(action ServerConfigureFunc) {
+func Configure(action ServerConfigureFunc) {
 	builder.Configure(action)
 }
