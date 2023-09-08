@@ -58,8 +58,7 @@ type Int64IdGenerator[T ~int64] struct {
 }
 
 func NewNumberIdGenerator[T ~int64]() *IdGenerator[T] {
-	workerId := app.Get[IdGeneratorOptions]().WorkerId
-	var options = idgen.NewIdGeneratorOptions(workerId)
+	options := app.Get[IdGeneratorOptions]().toOptions()
 	// 保存参数（务必调用，否则参数设置不生效）：
 	idgen.SetIdGenerator(options)
 	var g IdGenerator[T] = &Int64IdGenerator[T]{}
