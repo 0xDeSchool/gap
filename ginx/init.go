@@ -5,7 +5,7 @@ import (
 	"github.com/0xDeSchool/gap/utils"
 )
 
-var builder = NewServerBuilder(app.DefaultBuilder())
+var builder = NewServerBuilder()
 
 func init() {
 	builder.Options.Port = 5000
@@ -23,10 +23,12 @@ func init() {
 	})
 }
 
+// PreConfigure 配置服务，在Configure之前运行
 func PreConfigure(action ServerConfigureFunc) {
 	builder.PreConfigure(action)
 }
 
+// Configure 配置服务，在 gin.Run 之前运行
 func Configure(action ServerConfigureFunc) {
 	builder.Configure(action)
 }

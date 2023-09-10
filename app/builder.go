@@ -1,7 +1,5 @@
 package app
 
-import "github.com/0xDeSchool/gap/utils"
-
 type AppBuilder struct {
 	Context    *AppContext
 	CmdBuilder *CommandBuilder
@@ -35,12 +33,8 @@ func (a *AppBuilder) Info(use string, short string, description string) *AppBuil
 	return a
 }
 
-func (a *AppBuilder) PreRun(action RunFunc) {
+func (a *AppBuilder) Configure(action RunFunc) {
 	a.Context.PreRun(action)
-}
-
-func (a *AppBuilder) OrderPreRun(order int, action RunFunc) {
-	a.Context.PreOrderRun(order, action)
 }
 
 func (a *AppBuilder) Run(action RunFunc) {
@@ -53,24 +47,4 @@ func (a *AppBuilder) OrderRun(order int, action RunFunc) {
 
 func (a *AppBuilder) PostRun(action RunFunc) {
 	a.Context.PostRun(action)
-}
-
-func (a *AppBuilder) OrderPostRun(order int, action RunFunc) {
-	a.Context.PostOrderRun(order, action)
-}
-
-func (a *AppBuilder) Use(action func(*AppBuilder)) *AppBuilder {
-	action(a)
-	return a
-}
-
-func (a *AppBuilder) BindOptions(key string, options interface{}) {
-	a.PreRun(func() error {
-		utils.ViperBind(key, options)
-		return nil
-	})
-}
-
-func (a *AppBuilder) Configure(action RunFunc) {
-	a.Context.PreRun(action)
 }

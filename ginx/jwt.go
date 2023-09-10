@@ -73,7 +73,7 @@ func AddJwt(builder *ServerBuilder, configure func(*jwt.GinJWTMiddleware)) *JWTB
 	}
 	errx.CheckError(err)
 	builder.Items["JwtAuthMiddleware"] = authMiddleware
-	builder.App.Configure(func() error {
+	app.Configure(func() error {
 		app.AddValue(authMiddleware)
 		return nil
 	})
@@ -98,7 +98,7 @@ func (b *ServerBuilder) UseRestRoutes() {
 	})
 }
 
-// 获取认证中间件handler
+// AuthHandlerFunc 获取认证中间件handler
 func AuthHandlerFunc(builder *ServerBuilder) gin.HandlerFunc {
 	m, ok := builder.Items["JwtAuthMiddleware"]
 	if !ok {
@@ -111,7 +111,7 @@ func AuthHandlerFunc(builder *ServerBuilder) gin.HandlerFunc {
 	// return func(ctx *gin.Context) {}
 }
 
-// 支持匿名和用户登录两种访问方式
+// OptionalAuthHandlerFunc 支持匿名和用户登录两种访问方式
 func OptionalAuthHandlerFunc(builder *ServerBuilder) gin.HandlerFunc {
 	m, ok := builder.Items["JwtAuthMiddleware"]
 	if !ok {

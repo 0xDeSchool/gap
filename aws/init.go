@@ -9,29 +9,31 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-func AWS_SDK(b *app.AppBuilder) {
-	b.Configure(func() error {
+func init() {
+	app.Configure(func() error {
 		opts := &AwsOptions{
 			Url: "https://deschool.s3.amazonaws.com",
 		}
 		utils.ViperBind("AWS", opts)
 		app.AddValue(opts)
 		app.AddSingleton(func() *aws.Config {
-			conf, err := LoadAwsConfig(opts)
+			conf, err := loadAwsConfig(opts)
 			errx.CheckError(err)
 			return conf
 		})
 		app.AddSingleton(func() *VideoTranscoder {
-			config := app.Get[aws.Config]()
-			return NewVideoTranscoder(config, opts)
+			conf := app.Get[aws.Config]()
+			return NewVideoTranscoder(conf, opts)
 		})
+		addS3Client()
 		return nil
 	})
 }
 
-func LoadAwsConfig(opts *AwsOptions) (*aws.Config, error) {
+func loadAwsConfig(opts *AwsOptions) (*aws.Config, error) {
 	p := credentials.NewStaticCredentialsProvider(opts.AccessKeyId, opts.SecretAccessKey, opts.SessionToken)
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
@@ -39,4 +41,11 @@ func LoadAwsConfig(opts *AwsOptions) (*aws.Config, error) {
 		config.WithCredentialsProvider(p),
 	)
 	return &cfg, err
+}
+
+func addS3Client() {
+	app.TryAddSingleton(func() *s3.Client {
+		conf := app.Get[aws.Config]()
+		return s3.NewFromConfig(*conf)
+	})
 }

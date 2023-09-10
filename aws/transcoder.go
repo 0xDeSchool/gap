@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// section 的转换状态，如Completed、Pedding、Processing、Error
+// TransStatus section 的转换状态，如Completed、Pedding、Processing、Error
 type TransStatus string
 
 const (

@@ -1,7 +1,6 @@
 package ginx
 
 import (
-	"github.com/0xDeSchool/gap/app"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 )
@@ -10,15 +9,13 @@ type ServerBuilder struct {
 	preRuns []ServerConfigureFunc
 	initors []ServerConfigureFunc
 
-	App     *app.AppBuilder
 	Options *ServerOptions
 	// 只在程序启动过程中进行操作，以保证协程安全
 	Items map[string]any
 }
 
-func NewServerBuilder(builder *app.AppBuilder) *ServerBuilder {
+func NewServerBuilder() *ServerBuilder {
 	return &ServerBuilder{
-		App:     builder,
 		preRuns: make([]ServerConfigureFunc, 0),
 		initors: make([]ServerConfigureFunc, 0),
 		Options: &ServerOptions{
