@@ -11,11 +11,11 @@ import (
 type memoryCacheFactory struct {
 }
 
-func (f *memoryCacheFactory) Create(opitons *CacheOptions) Cache {
-	return newMemoryCache(opitons)
+func (f *memoryCacheFactory) Create(options *CacheOptions) Cache {
+	return newMemoryCache(options)
 }
 
-func newMememoryCacheFactory() CacheFactory {
+func newMemoryCacheFactory() CacheFactory {
 	return &memoryCacheFactory{}
 }
 

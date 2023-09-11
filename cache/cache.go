@@ -72,7 +72,7 @@ func GetCache() Cache {
 func getFactory() CacheFactory {
 	factory, ok := app.GetOptional[CacheFactory]()
 	if !ok {
-		f := newMememoryCacheFactory()
+		f := newMemoryCacheFactory()
 		factory = &f
 	}
 	return *factory
