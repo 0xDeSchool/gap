@@ -52,6 +52,7 @@ func AuthFunc[TKey comparable]() gin.HandlerFunc {
 
 // AddAuthHandler adds a handler to the auth middleware.
 func AddAuthHandler[TKey comparable](h AuthHandler[TKey]) {
+	app.TryAddValue(&AuthOptions[TKey]{})
 	app.ConfigureOptions(func(c *app.Container, opts *AuthOptions[TKey]) {
 		opts.AddHandler(h)
 	})
