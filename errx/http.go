@@ -29,7 +29,7 @@ func (e *HttpError) Error() string {
 
 var UnhandledError = &HttpError{
 	Message:    "服务器未处理异常",
-	Code:       ErrCodeUnkown,
+	Code:       ErrCodeUnknown,
 	HttpStatus: http.StatusInternalServerError,
 }
 
@@ -48,7 +48,7 @@ var ErrUnauthorized = &HttpError{
 func New(err error) HttpError {
 	return HttpError{
 		Message: err.Error(),
-		Code:    ErrCodeUnkown,
+		Code:    ErrCodeUnknown,
 	}
 }
 
@@ -58,10 +58,10 @@ var ErrPageNotFound = &HttpError{
 	Message:    "page not found",
 }
 
-func NewUnkonwErr(err any) HttpError {
+func NewUnknownErr(err any) HttpError {
 	return HttpError{
 		Message: fmt.Sprintf("未处理异常: %s", err),
-		Code:    ErrCodeUnkown,
+		Code:    ErrCodeUnknown,
 	}
 }
 

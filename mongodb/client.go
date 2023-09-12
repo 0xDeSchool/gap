@@ -18,11 +18,11 @@ var (
 	once   sync.Once
 )
 
-func GetClient(moptions *MongoOptions) (*mongo.Client, error) {
+func GetClient(opts *MongoOptions) (*mongo.Client, error) {
 	var err error = nil
 	once.Do(func() {
 		client, err = mongo.Connect(context.TODO(),
-			options.Client().ApplyURI(moptions.URL),
+			options.Client().ApplyURI(opts.URL),
 		)
 	})
 	if err != nil {

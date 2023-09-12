@@ -41,12 +41,12 @@ func Debugf(format string, v ...interface{}) {
 }
 
 func Warn(msg string, errs ...error) {
-	lerr := _logger.Warn()
+	err := _logger.Warn()
 	if len(errs) > 0 {
-		//lerr = lerr.Err(errs[0])
+		//err = err.Err(errs[0])
 		msg += ": " + errs[0].Error()
 	}
-	lerr.Msg(msg)
+	err.Msg(msg)
 }
 
 func Warnf(format string, v ...interface{}) {
@@ -66,23 +66,23 @@ func Error(msg string, errs ...any) {
 
 func Fatal(err error, msg ...string) {
 	msg = append(msg, "\n"+printStack())
-	lerr := _logger.Fatal().Err(err)
+	e := _logger.Fatal().Err(err)
 	if len(msg) > 0 {
-		lerr.Msg(strings.Join(msg, ","))
+		e.Msg(strings.Join(msg, ","))
 	} else {
-		lerr.Msg(err.Error())
+		e.Msg(err.Error())
 	}
 }
 
 func FatalMsg(msg string) {
 	msg = msg + "\n" + printStack()
-	lerr := _logger.Fatal()
-	lerr.Msg(msg)
+	err := _logger.Fatal()
+	err.Msg(msg)
 }
 
 func Fatalf(format string, a ...any) {
-	lerr := _logger.Fatal()
-	lerr.Msg(fmt.Sprintf(format, a...) + "\n" + printStack())
+	err := _logger.Fatal()
+	err.Msg(fmt.Sprintf(format, a...) + "\n" + printStack())
 }
 
 func printStack() string {

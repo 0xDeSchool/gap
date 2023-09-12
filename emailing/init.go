@@ -11,7 +11,7 @@ func init() {
 		utils.ViperBind("Email", emailOpts)
 		app.AddValue(emailOpts)
 		app.AddSingleton(func() *EmailSender {
-			var es EmailSender = NewGomailSender(emailOpts)
+			var es EmailSender = NewGoMailSender(emailOpts)
 			return &es
 		})
 		return nil

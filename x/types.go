@@ -4,6 +4,7 @@ type PageParam struct {
 	Page         int64 `json:"page"`         // 页码, 从1开始
 	PageSize     int64 `json:"pageSize"`     // 每页大小
 	IncludeTotal bool  `json:"includeTotal"` // 是否包含总数
+	IncludedId   any   `json:"id"`           // 包含指定Id的数据，用于分页查询，这时候不需要传入page
 }
 
 func (p *PageParam) Skip() int64 {
@@ -14,11 +15,18 @@ func (p *PageParam) Limit() int64 {
 	return p.PageSize
 }
 
-// NewPageParam new pageparam
+// NewPageParam new page param
 func NewPageParam(page, pageSize int64) *PageParam {
 	return &PageParam{
 		Page:     page,
 		PageSize: pageSize,
+	}
+}
+
+func PageParamWithId(includedId any, limit int64) *PageParam {
+	return &PageParam{
+		IncludedId: includedId,
+		PageSize:   limit,
 	}
 }
 
@@ -46,7 +54,7 @@ func PageLimit(limit int) *PageAndSort {
 	}
 }
 
-// new page and sort
+// NewPageAndSort new page and sort
 func NewPageAndSort(page, pageSize int64, sort string) *PageAndSort {
 	return &PageAndSort{
 		PageParam: PageParam{
@@ -57,7 +65,17 @@ func NewPageAndSort(page, pageSize int64, sort string) *PageAndSort {
 	}
 }
 
-// is sorted by desc
+func NewPageAndSortWithId(includedId any, pageSize int64, sort string) *PageAndSort {
+	return &PageAndSort{
+		PageParam: PageParam{
+			IncludedId: includedId,
+			PageSize:   pageSize,
+		},
+		Sort: sort,
+	}
+}
+
+// IsDesc is sorted by desc
 func (p *PageAndSort) IsDesc() bool {
 	return len(p.Sort) > 0 && p.Sort[0] == '-' || p.Sort[0] == '!'
 }
@@ -66,4 +84,5 @@ type PagedResult[T any] struct {
 	Total   int64 `json:"total"`
 	Data    []T   `json:"data"`
 	HasMore bool  `json:"hasMore"`
+	Page    int64 `json:"page"`
 }

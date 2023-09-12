@@ -12,11 +12,11 @@ type ErrCode = string
 
 var (
 
-	// 未知错误
-	ErrCodeUnkown ErrCode = "unkown"
+	// ErrCodeUnknown 未知错误
+	ErrCodeUnknown ErrCode = "unkown"
 
-	// 未知原因参数不合法
-	ErrUnkownParameterUnvalid ErrCode = "unvalid"
+	// ErrUnknownParameterInvalid 未知原因参数不合法
+	ErrUnknownParameterInvalid ErrCode = "invalid"
 )
 
 var (

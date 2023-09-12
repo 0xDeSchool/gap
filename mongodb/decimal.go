@@ -2,12 +2,12 @@ package mongodb
 
 import (
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 	"reflect"
 
 	"github.com/shopspring/decimal"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -25,7 +25,7 @@ func (d Decimal) DecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueReader, 
 
 	var value decimal.Decimal
 	switch vr.Type() {
-	case bsontype.Decimal128:
+	case bson.TypeDecimal128:
 		dec, err := vr.ReadDecimal128()
 		if err != nil {
 			return err

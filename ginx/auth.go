@@ -3,6 +3,7 @@ package ginx
 import (
 	"context"
 	"github.com/0xDeSchool/gap/app"
+	"github.com/0xDeSchool/gap/errx"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,13 +13,11 @@ type AuthHandlerContext[TKey comparable] struct {
 	HasHandled bool
 }
 
-func (ac *AuthHandlerContext[TKey]) Ctx() *gin.Context {
+func (ac *AuthHandlerContext[TKey]) Context() *gin.Context {
 	return ac.ctx
 }
 
-type AuthHandler[TKey comparable] interface {
-	Handle(ctx *AuthHandlerContext[TKey])
-}
+type AuthHandler[TKey comparable] func(ctx *AuthHandlerContext[TKey]) error
 
 func AuthFunc[TKey comparable]() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -27,7 +26,8 @@ func AuthFunc[TKey comparable]() gin.HandlerFunc {
 			ctx: c,
 		}
 		for i := range handlers {
-			handlers[i].Handle(ctx)
+			err := handlers[i](ctx)
+			errx.CheckError(err)
 			if ctx.HasHandled {
 				break
 			}
