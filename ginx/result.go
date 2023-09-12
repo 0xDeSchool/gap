@@ -38,11 +38,19 @@ func NewResponseResult(v any) *ResponseResult {
 
 type ResultHandler func(ctx *gin.Context, v *ResponseResult)
 
+type ResultHandlerOptions struct {
+	handlers []ResultHandler
+}
+
+func (opts *ResultHandlerOptions) AddHandler(h ResultHandler) {
+	opts.handlers = append(opts.handlers, h)
+}
+
 func JSON(ctx *gin.Context, code int, v any) {
-	handlers := app.GetArray[*ResultHandler]()
+	opts := app.Get[ResultHandlerOptions]()
 	res := NewResponseResult(v)
-	for _, h := range handlers {
-		(*h)(ctx, res)
+	for _, h := range opts.handlers {
+		h(ctx, res)
 	}
 	ctx.JSON(code, res.Value)
 }

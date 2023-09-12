@@ -4,7 +4,9 @@ import "github.com/0xDeSchool/gap/app"
 
 func init() {
 	app.Configure(func() error {
-		app.TryAddSingletonDefault[TenantResolver]()
+		app.AddSingleton(NewTenantService)
+		opts := NewTenantOptions()
+		app.AddValue(opts)
 		return nil
 	})
 }

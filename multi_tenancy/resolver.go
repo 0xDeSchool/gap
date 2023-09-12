@@ -2,8 +2,6 @@ package multi_tenancy
 
 import (
 	"context"
-	"github.com/0xDeSchool/gap/app"
-	"github.com/0xDeSchool/gap/cache"
 )
 
 type TenantResolveContext struct {
@@ -22,11 +20,21 @@ func (c *TenantResolveContext) HasResolved() bool {
 	return c.Handled || c.TenantIdOrName != ""
 }
 
-type ITenantResolveContributor interface {
+type TenantOptions struct {
+	Resolvers []TenantResolver
+}
+
+func NewTenantOptions() *TenantOptions {
+	return &TenantOptions{
+		Resolvers: make([]TenantResolver, 0),
+	}
+}
+
+type TenantResolver struct {
 	// Name of resolver
-	Name() string
-	// Resolve tenant
-	Resolve(ctx *TenantResolveContext) error
+	Name string
+	// ResolveFunc tenant
+	ResolveFunc func(ctx *TenantResolveContext) error
 }
 
 type TenantInfo struct {
@@ -36,34 +44,4 @@ type TenantInfo struct {
 
 func (t *TenantInfo) IsHost() bool {
 	return t.Id == ""
-}
-
-type TenantResolver struct {
-	cache cache.Cache
-}
-
-func NewTenantResolver() *TenantResolver {
-	return &TenantResolver{
-		cache: cache.New(&cache.CacheOptions{
-			LifeWindow: 0,
-		}),
-	}
-}
-
-func (t *TenantResolver) ResolveTenant(ctx context.Context) (*TenantInfo, error) {
-	result := &TenantInfo{}
-	resolvers := app.GetArray[ITenantResolveContributor]()
-	resolveCtx := NewTenantResolveContext(ctx)
-	for _, resolver := range resolvers {
-		err := resolver.Resolve(resolveCtx)
-		if err != nil {
-			return nil, err
-		}
-		if resolveCtx.HasResolved() {
-			// TODO: support tenant name
-			result.Id = resolveCtx.TenantIdOrName
-			break
-		}
-	}
-	return result, nil
 }

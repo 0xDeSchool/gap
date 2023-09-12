@@ -41,17 +41,18 @@ func (c *Container) GetOptional(serviceType reflect.Type) (interface{}, bool) {
 	return c.create(serviceType, descriptor), true
 }
 
-func (c *Container) GetArray(baseType reflect.Type) []interface{} {
-	instances := make([]interface{}, 0)
-	for i := 0; i < len(c.Services); i++ {
-		v := &c.Services[i]
-		implType := reflect.PtrTo(v.ServiceType)
-		if v.ServiceType == baseType || implType == baseType || implType.AssignableTo(baseType) {
-			instances = append(instances, c.create(v.ServiceType, v))
-		}
-	}
-	return instances
-}
+// 有问题，只能多单例有效，可使用 options 模式来替代，通过 ConfigureOption 来配置
+//func (c *Container) GetArray(baseType reflect.Type) []interface{} {
+//	instances := make([]interface{}, 0)
+//	for i := 0; i < len(c.Services); i++ {
+//		v := &c.Services[i]
+//		implType := reflect.PtrTo(v.ServiceType)
+//		if v.ServiceType == baseType || implType == baseType || implType.AssignableTo(baseType) {
+//			instances = append(instances, c.create(v.ServiceType, v))
+//		}
+//	}
+//	return instances
+//}
 
 func (c *Container) Add(descriptor ServiceDescriptor) {
 	c.Services = append(c.Services, descriptor)
