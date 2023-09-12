@@ -2,6 +2,7 @@ package multi_tenancy
 
 import (
 	"context"
+	"github.com/0xDeSchool/gap/app"
 )
 
 type TenantResolveContext struct {
@@ -30,11 +31,13 @@ func NewTenantOptions() *TenantOptions {
 	}
 }
 
+type ResolveTenantFunc func(ctx *TenantResolveContext) error
+
 type TenantResolver struct {
 	// Name of resolver
 	Name string
 	// ResolveFunc tenant
-	ResolveFunc func(ctx *TenantResolveContext) error
+	ResolveFunc ResolveTenantFunc
 }
 
 type TenantInfo struct {
@@ -44,4 +47,13 @@ type TenantInfo struct {
 
 func (t *TenantInfo) IsHost() bool {
 	return t.Id == ""
+}
+
+func AddResolver(name string, h ResolveTenantFunc) {
+	app.ConfigureOptions(func(c *app.Container, opts *TenantOptions) {
+		opts.Resolvers = append(opts.Resolvers, TenantResolver{
+			Name:        name,
+			ResolveFunc: h,
+		})
+	})
 }

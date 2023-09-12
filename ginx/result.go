@@ -36,14 +36,20 @@ func NewResponseResult(v any) *ResponseResult {
 	return &ResponseResult{Value: v}
 }
 
-type ResultHandler func(ctx *gin.Context, v *ResponseResult)
+type ResultHandlerFunc func(ctx *gin.Context, v *ResponseResult)
 
 type ResultHandlerOptions struct {
-	handlers []ResultHandler
+	handlers []ResultHandlerFunc
 }
 
-func (opts *ResultHandlerOptions) AddHandler(h ResultHandler) {
+func (opts *ResultHandlerOptions) AddHandler(h ResultHandlerFunc) {
 	opts.handlers = append(opts.handlers, h)
+}
+
+func AddResultHandler(h ResultHandlerFunc) {
+	app.ConfigureOptions(func(c *app.Container, opts *ResultHandlerOptions) {
+		opts.AddHandler(h)
+	})
 }
 
 func JSON(ctx *gin.Context, code int, v any) {
