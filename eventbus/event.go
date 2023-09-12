@@ -42,5 +42,14 @@ func Subscribe[T any](handler func(ctx context.Context, msg *T) error) {
 		panic("handler is nil")
 	}
 	c := pubsub.GetClient()
-	c.On(NewHandlerOption(handler))
+	c.On(NewHandlerOption(false, handler))
+}
+
+// SubscribeSync is a synchronous version of Subscribe.
+func SubscribeSync[T any](handler func(ctx context.Context, msg *T) error) {
+	if handler == nil {
+		panic("handler is nil")
+	}
+	c := pubsub.GetClient()
+	c.On(NewHandlerOption(true, handler))
 }
