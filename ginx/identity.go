@@ -14,6 +14,7 @@ type CurrentUserInfo[TKey comparable] struct {
 	UserName string
 	Address  string
 	Avatar   string
+	AuthType string // 验证类型
 	Data     map[string]any
 }
 

@@ -4,11 +4,32 @@ import (
 	"context"
 	"github.com/0xDeSchool/gap/app"
 	"github.com/0xDeSchool/gap/errx"
+	"github.com/0xDeSchool/gap/eventbus"
 	"github.com/gin-gonic/gin"
 )
 
 type AuthOptions[TKey comparable] struct {
 	handlers []AuthHandler[TKey]
+}
+
+type AuthedEventData[TKey comparable] struct {
+	ID       TKey           `json:"id"`
+	UserName string         `json:"userName"`
+	Address  string         `json:"address"`
+	Avatar   string         `json:"avatar"`
+	Data     map[string]any `json:"data"`
+	AuthType string         // 验证类型
+}
+
+func NewAuthedEventData[TKey comparable](u *CurrentUserInfo[TKey]) *AuthedEventData[TKey] {
+	return &AuthedEventData[TKey]{
+		ID:       u.ID,
+		UserName: u.UserName,
+		Address:  u.Address,
+		Avatar:   u.Avatar,
+		Data:     u.Data,
+		AuthType: u.AuthType,
+	}
 }
 
 func (o *AuthOptions[TKey]) AddHandler(h AuthHandler[TKey]) {
@@ -43,6 +64,8 @@ func AuthFunc[TKey comparable]() gin.HandlerFunc {
 		}
 		if ctx.User == nil {
 			ctx.User = &CurrentUserInfo[TKey]{}
+		} else {
+			eventbus.Publish(context.Background(), NewAuthedEventData[TKey](ctx.User))
 		}
 		userCtx := context.WithValue(c.Request.Context(), userKey, ctx.User)
 		c.Request = c.Request.WithContext(userCtx)
