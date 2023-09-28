@@ -67,7 +67,8 @@ func AuthFunc[TKey comparable]() gin.HandlerFunc {
 		} else {
 			eventbus.Publish(context.Background(), NewAuthedEventData[TKey](ctx.User))
 		}
-		userCtx := context.WithValue(c.Request.Context(), userKey, ctx.User)
+
+		userCtx := WithUserContext(c.Request.Context(), ctx.User)
 		c.Request = c.Request.WithContext(userCtx)
 		c.Next()
 	}

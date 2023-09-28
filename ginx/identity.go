@@ -45,6 +45,10 @@ func CurrentUser[TKey comparable](c context.Context) *CurrentUserInfo[TKey] {
 	return user
 }
 
+func WithUserContext[TKey comparable](c context.Context, user *CurrentUserInfo[TKey]) context.Context {
+	return context.WithValue(c, userKey, user)
+}
+
 func CurrentTenant(c context.Context) *multi_tenancy.TenantInfo {
 	t := multi_tenancy.CurrentTenant(c)
 	if t == nil {
