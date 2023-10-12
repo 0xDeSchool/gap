@@ -11,19 +11,10 @@ import (
 
 type ServerConfigureFunc func(s *Server) error
 
-type AppEnvironment string
-
-const (
-	Development AppEnvironment = "development"
-	Production  AppEnvironment = "production"
-	Staging     AppEnvironment = "staging"
-)
-
 type ServerOptions struct {
-	Port        int
-	RootUrl     string
-	LogLevel    zerolog.Level
-	Environment AppEnvironment
+	Port     int
+	RootUrl  string
+	LogLevel zerolog.Level
 }
 
 type serverHandler struct {

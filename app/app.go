@@ -1,12 +1,26 @@
 package app
 
 import (
+	"github.com/rs/zerolog"
 	"os"
 
 	"github.com/0xDeSchool/gap/log"
 
 	"github.com/spf13/cobra"
 )
+
+type AppEnvironment string
+
+const (
+	Development AppEnvironment = "development"
+	Production  AppEnvironment = "production"
+	Staging     AppEnvironment = "staging"
+)
+
+type AppOptions struct {
+	Environment AppEnvironment
+	LogLevel    zerolog.Level
+}
 
 type App struct {
 	rootCmd *cobra.Command

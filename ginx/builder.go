@@ -2,7 +2,6 @@ package ginx
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 )
 
 type ServerBuilder struct {
@@ -19,7 +18,7 @@ func NewServerBuilder() *ServerBuilder {
 		preRuns: make([]ServerConfigureFunc, 0),
 		initors: make([]ServerConfigureFunc, 0),
 		Options: &ServerOptions{
-			LogLevel: zerolog.InfoLevel,
+			Port: 5000,
 		},
 		Items: make(map[string]any),
 	}
