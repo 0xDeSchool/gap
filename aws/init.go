@@ -14,7 +14,7 @@ func init() {
 		utils.ViperBind("AWS", opts)
 		app.AddValue(opts)
 		app.AddSingleton(func() *aws.Config {
-			conf, err := loadAwsConfig(opts)
+			conf, err := loadAwsConfig(app.Get[Options]())
 			errx.CheckError(err)
 			return conf
 		})
