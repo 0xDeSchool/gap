@@ -26,6 +26,7 @@ func TryAddService(descriptor ServiceDescriptor) *Container {
 	return container
 }
 
+// ConfigureOptions 配置 Options，不支持两个类型相互依赖
 func ConfigureOptions[T any](f func(container *Container, v *T)) {
 	container.Configure(getServiceType[T](), func(container *Container, instance any) {
 		f(container, instance.(*T))
