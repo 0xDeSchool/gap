@@ -18,7 +18,7 @@ func (opts Options) Get(k string) any {
 	return opts[strings.ToLower(k)]
 }
 
-func (opts Options) Maps() map[string]any {
+func (opts Options) Values() map[string]any {
 	return opts
 }
 
