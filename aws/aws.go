@@ -9,6 +9,14 @@ import (
 
 type Options map[string]any
 
+func (opts Options) Set(k string, v any) {
+	opts[k] = v
+}
+
+func (opts Options) Get(k string) any {
+	return opts[k]
+}
+
 func (opts Options) GetString(k string) string {
 	if v, ok := opts[k].(string); ok {
 		return v
