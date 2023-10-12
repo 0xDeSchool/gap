@@ -18,6 +18,10 @@ func (opts Options) Get(k string) any {
 	return opts[strings.ToLower(k)]
 }
 
+func (opts Options) Maps() map[string]any {
+	return opts
+}
+
 func (opts Options) GetString(k string) string {
 	if v, ok := opts[strings.ToLower(k)].(string); ok {
 		return v
