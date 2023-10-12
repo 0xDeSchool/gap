@@ -10,9 +10,7 @@ import (
 
 func init() {
 	app.Configure(func() error {
-		opts := &Options{
-			BaseUrl: "https://deschool.s3.amazonaws.com",
-		}
+		opts := &Options{}
 		utils.ViperBind("AWS", opts)
 		app.AddValue(opts)
 		app.AddSingleton(func() *aws.Config {
