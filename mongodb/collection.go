@@ -43,6 +43,7 @@ func (c *Collection[TEntity, TKey]) Find(ctx context.Context, filter bson.D, opt
 }
 
 func (c *Collection[TEntity, TKey]) FindByPage(ctx context.Context, filter bson.D, p *x.PageAndSort, opts ...*options.FindOptions) (*x.PagedResult[*TEntity], error) {
+	filter = c.SetAllFilter(ctx, filter)
 	result := &x.PagedResult[*TEntity]{}
 	findOptions := options.Find()
 	if p != nil {
@@ -94,6 +95,7 @@ func (c *Collection[TEntity, TKey]) GetMany(ctx context.Context, ids []string) (
 		return make([]*TEntity, 0), nil
 	}
 	f := bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}}
+	f = c.SetAllFilter(ctx, f)
 	return c.Find(ctx, f)
 }
 
