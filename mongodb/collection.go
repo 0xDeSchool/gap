@@ -258,7 +258,7 @@ func (c *Collection[TEntity, TKey]) SetAllFilter(ctx context.Context, filter bso
 
 func (c *Collection[TEntity, TKey]) SetSoftDeleteFilter(filter bson.D) bson.D {
 	var v any = (*TEntity)(nil)
-	if _, ok := v.(ddd.SoftDeleteEntity[TKey]); ok {
+	if _, ok := v.(ddd.ISoftDeleteEntity[TKey]); ok {
 		return append(filter, bson.E{Key: ddd.SoftDeleteFieldName, Value: false})
 	}
 	return filter
