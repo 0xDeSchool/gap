@@ -7,7 +7,6 @@ import (
 	"github.com/0xDeSchool/gap/multi_tenancy"
 	"strings"
 
-	"github.com/0xDeSchool/gap/ginx"
 	"github.com/0xDeSchool/gap/log"
 	"github.com/0xDeSchool/gap/x"
 
@@ -211,8 +210,6 @@ func (c *Collection[TEntity, TKey]) DeleteMany(ctx context.Context, filter bson.
 		return 0, err
 	}
 	if _, ok := v.(ddd.ISoftDeleteEntity[TKey]); ok {
-		uw := ginx.NewUnitWork(ctx)
-		uw.Start(ctx)
 		var count = 0
 		for i := range es {
 			softEntity := v.(ddd.ISoftDeleteEntity[TKey])
@@ -220,14 +217,9 @@ func (c *Collection[TEntity, TKey]) DeleteMany(ctx context.Context, filter bson.
 			idFilter := bson.D{{"_id", softEntity.GetId()}}
 			ct, err := c.UpdateOne(ctx, idFilter, es[i])
 			if err != nil {
-				uw.Abort(ctx)
 				return 0, err
 			}
 			count += ct
-		}
-		err = uw.Commit(ctx)
-		if err != nil {
-			return 0, err
 		}
 		for _, e := range es {
 			eventbus.Publish(context.Background(), eventbus.Deleted(e))
