@@ -1,5 +1,21 @@
 package slicexp
 
+func First[TSource any](source []TSource, predicate func(TSource) bool) (TSource, bool) {
+	if source == nil {
+		panic("parameter source is nil")
+	}
+	if predicate == nil {
+		panic("parameter predicate is nil")
+	}
+	for i := 0; i < len(source); i++ {
+		if predicate(source[i]) {
+			return source[i], true
+		}
+	}
+	var res TSource
+	return res, false
+}
+
 func Map[TSource any, TResult any](source []*TSource, selector func(*TSource) TResult) []TResult {
 	if source == nil {
 		return nil
@@ -160,4 +176,19 @@ func Sum[TSource any](source []*TSource, selector func(*TSource) int) int {
 		count += selector(source[i])
 	}
 	return count
+}
+
+func GroupBy[TSource any, TKey comparable](source []TSource, keySelector func(TSource) TKey) map[TKey][]TSource {
+	if source == nil {
+		panic("parameter source is nil")
+	}
+	if keySelector == nil {
+		panic("parameter keySelector is nil")
+	}
+	result := make(map[TKey][]TSource)
+	for i := range source {
+		k := keySelector(source[i])
+		result[k] = append(result[k], source[i])
+	}
+	return result
 }
