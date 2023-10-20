@@ -1,6 +1,8 @@
 package app
 
-import "reflect"
+import (
+	"reflect"
+)
 
 type ServiceScope int
 

@@ -54,6 +54,8 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) useDefaultHandlers() {
+	s.G.ContextWithFallback = true
+
 	mid := logger.SetLogger(
 		logger.WithDefaultLevel(s.Options.LogLevel),
 	)

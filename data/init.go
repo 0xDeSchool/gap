@@ -12,7 +12,7 @@ func init() {
 		return nil
 	})
 	ginx.PreConfigure(func(s *ginx.Server) error {
-		s.Use(nil, dataLoaderFunc())
+		s.Use(dataLoaderFunc())
 		return nil
 	})
 }
