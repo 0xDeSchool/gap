@@ -139,14 +139,14 @@ func GetByType[T interface{}](serviceType reflect.Type) *T {
 	return container.Get(serviceType).(*T)
 }
 
-//func GetArray[T interface{}]() []T {
-//	items := container.GetArray(getServiceType[T]())
-//	typeItems := make([]T, len(items))
-//	for i := 0; i < len(items); i++ {
-//		typeItems[i] = items[i].(T)
-//	}
-//	return typeItems
-//}
+func GetArray[T interface{}]() []T {
+	items := container.GetArray(getServiceType[T]())
+	typeItems := make([]T, len(items))
+	for i := 0; i < len(items); i++ {
+		typeItems[i] = items[i].(T)
+	}
+	return typeItems
+}
 
 func getServiceType[T interface{}]() reflect.Type {
 	return reflect.TypeOf((*T)(nil)).Elem()

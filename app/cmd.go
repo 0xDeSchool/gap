@@ -47,6 +47,7 @@ func (b *CommandBuilder) AddRun(use string, short string, run func()) {
 		Short: short,
 		Run:   func(cmd *cobra.Command, args []string) { run() },
 	})
+	b.RootCmd.Commands()
 }
 
 func configureApp(cmd *cobra.Command, ac *AppContext) error {

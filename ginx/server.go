@@ -18,15 +18,9 @@ type ServerOptions struct {
 	LogLevel zerolog.Level
 }
 
-type serverHandler struct {
-	Func  gin.HandlerFunc
-	Order int
-}
-
 type Server struct {
-	G           *gin.Engine
-	Options     *ServerOptions
-	middlewares []serverHandler
+	G       *gin.Engine
+	Options *ServerOptions
 }
 
 func NewServer(g *gin.Engine, options *ServerOptions) *Server {
@@ -36,29 +30,7 @@ func NewServer(g *gin.Engine, options *ServerOptions) *Server {
 	}
 }
 
-func (s *Server) Use(middlewares ...gin.HandlerFunc) *Server {
-	return s.UseWithOrder(0, middlewares...)
-}
-
-func (s *Server) UseBefore(middlewares ...gin.HandlerFunc) *Server {
-	return s.UseWithOrder(-1, middlewares...)
-}
-
-func (s *Server) UseWithOrder(order int, middlewares ...gin.HandlerFunc) *Server {
-	for _, m := range middlewares {
-		s.middlewares = append(s.middlewares, serverHandler{
-			Func:  m,
-			Order: order,
-		})
-	}
-	return s
-}
-
 func (s *Server) Run() error {
-	s.useDefaultHandlers()
-	for _, m := range s.middlewares {
-		s.G.Use(m.Func)
-	}
 	addr := ":" + strconv.Itoa(s.Options.Port)
 	if s.Options.Port == 0 {
 		addr = ":5000"
@@ -67,13 +39,19 @@ func (s *Server) Run() error {
 	return s.G.Run(addr)
 }
 
-func (s *Server) useDefaultHandlers() {
+func (s *Server) Use(handlers ...gin.HandlerFunc) *Server {
+	s.G.Use(handlers...)
+	return s
+}
+
+func (s *Server) UseDefaultHandlers() *Server {
 	s.G.ContextWithFallback = true
 
 	mid := logger.SetLogger(
 		logger.WithDefaultLevel(s.Options.LogLevel),
 	)
-	s.Use(mid)
-	s.Use(ErrorMiddleware)
-	s.Use(UnitWorkMiddleware())
+	s.G.Use(mid)
+	s.G.Use(ErrorMiddleware)
+	s.G.Use(UnitWorkMiddleware())
+	return s
 }

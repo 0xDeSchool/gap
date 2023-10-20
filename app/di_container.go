@@ -20,9 +20,6 @@ type serviceItem struct {
 }
 
 func (item *serviceItem) GetValue(c *Container) any {
-	if item.Value != nil {
-		return item.Value
-	}
 	var v any
 	if item.Scope == Transient {
 		v = item.createInstance(c)
@@ -37,6 +34,7 @@ func (item *serviceItem) GetValue(c *Container) any {
 			item.Inits[i](c, v)
 		}
 		item.Value = v
+		item.Inits = nil
 	} else {
 		panic("not supported scope")
 	}
