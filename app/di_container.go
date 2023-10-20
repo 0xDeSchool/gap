@@ -9,6 +9,7 @@ import (
 func newContainer() *Container {
 	return &Container{
 		Services: make([]*serviceItem, 0),
+		inits:    make(map[reflect.Type][]InitFunc),
 	}
 }
 
@@ -26,14 +27,14 @@ func (item *serviceItem) GetValue(c *Container) any {
 	if item.Scope == Transient {
 		v = item.createInstance(c)
 		for i := 0; i < len(item.Inits); i++ {
-			item.Inits[i](nil, v)
+			item.Inits[i](c, v)
 		}
 	} else if item.Scope == Singleton {
 		item.lock.Lock()
 		defer item.lock.Unlock()
 		v = item.createInstance(c)
 		for i := 0; i < len(item.Inits); i++ {
-			item.Inits[i](nil, v)
+			item.Inits[i](c, v)
 		}
 		item.Value = v
 	} else {
@@ -56,6 +57,8 @@ type InitFunc func(container *Container, instance any)
 
 type Container struct {
 	Services []*serviceItem
+
+	inits map[reflect.Type][]InitFunc
 }
 
 func (c *Container) Get(serviceType reflect.Type) interface{} {
@@ -89,9 +92,14 @@ func (c *Container) GetArray(baseType reflect.Type) []interface{} {
 }
 
 func (c *Container) Add(descriptor *ServiceDescriptor) {
-	c.Services = append(c.Services, &serviceItem{
+	item := &serviceItem{
 		ServiceDescriptor: descriptor,
-	})
+	}
+	if its, has := c.inits[descriptor.ServiceType]; has {
+		item.Inits = its
+		delete(c.inits, descriptor.ServiceType)
+	}
+	c.Services = append(c.Services, item)
 }
 
 func (c *Container) TryAdd(descriptor *ServiceDescriptor) {
@@ -105,9 +113,10 @@ func (c *Container) TryAdd(descriptor *ServiceDescriptor) {
 func (c *Container) Configure(t reflect.Type, initFunc InitFunc) {
 	item := c.firstOrDefault(t)
 	if item == nil {
-		panic(fmt.Sprintf("service %s not found", t))
+		c.inits[t] = append(c.inits[t], initFunc)
+	} else {
+		item.Inits = append(item.Inits, initFunc)
 	}
-	item.Inits = append(item.Inits, initFunc)
 }
 
 func (c *Container) firstOrDefault(serviceType reflect.Type) *serviceItem {
