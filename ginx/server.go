@@ -1,6 +1,7 @@
 package ginx
 
 import (
+	"github.com/gin-contrib/logger"
 	"strconv"
 
 	"github.com/0xDeSchool/gap/log"
@@ -18,13 +19,13 @@ type ServerOptions struct {
 }
 
 type serverHandler struct {
-	Order int // 优先级
-	Func  gin.HandlerFunc
+	Func gin.HandlerFunc
 }
 
 type Server struct {
-	G       *gin.Engine
-	Options *ServerOptions
+	G           *gin.Engine
+	Options     *ServerOptions
+	middlewares []serverHandler
 }
 
 func NewServer(g *gin.Engine, options *ServerOptions) *Server {
@@ -34,11 +35,29 @@ func NewServer(g *gin.Engine, options *ServerOptions) *Server {
 	}
 }
 
+func (s *Server) Use(middleware gin.HandlerFunc) {
+	s.middlewares = append(s.middlewares, serverHandler{
+		Func: middleware,
+	})
+}
 func (s *Server) Run() error {
+	s.useDefaultHandlers()
+	for _, m := range s.middlewares {
+		s.G.Use(m.Func)
+	}
 	addr := ":" + strconv.Itoa(s.Options.Port)
 	if s.Options.Port == 0 {
 		addr = ":5000"
 	}
 	log.Info("********** Listening: " + addr + " ***********\n")
 	return s.G.Run(addr)
+}
+
+func (s *Server) useDefaultHandlers() {
+	mid := logger.SetLogger(
+		logger.WithDefaultLevel(s.Options.LogLevel),
+	)
+	s.Use(mid)
+	s.Use(ErrorMiddleware)
+	s.Use(UnitWorkMiddleware())
 }

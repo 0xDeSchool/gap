@@ -50,16 +50,18 @@ func ErrorMiddleware(c *gin.Context) {
 			}
 			log.Error("请求出现错误", err)
 			handlers.Run(c, err)
-			if err2, ok := r.(*errx.HttpError); ok {
-				JSON(c, err2.HttpStatus, *err2)
-			} else {
-				if errors.Is(err, mongo.ErrNoDocuments) {
-					JSON(c, http.StatusNotFound, errx.New(err))
+			if !c.IsAborted() {
+				if err2, ok := r.(*errx.HttpError); ok {
+					JSON(c, err2.HttpStatus, *err2)
 				} else {
-					JSON(c, http.StatusInternalServerError, errx.New(err))
+					if errors.Is(err, mongo.ErrNoDocuments) {
+						JSON(c, http.StatusNotFound, errx.New(err))
+					} else {
+						JSON(c, http.StatusInternalServerError, errx.New(err))
+					}
 				}
+				c.Abort()
 			}
-			c.Abort()
 		}
 	}()
 	c.Next()
