@@ -16,12 +16,12 @@ func CreateContainer() *Container {
 	return newContainer()
 }
 
-func AddService(descriptor ServiceDescriptor) *Container {
+func AddService(descriptor *ServiceDescriptor) *Container {
 	container.Add(descriptor)
 	return container
 }
 
-func TryAddService(descriptor ServiceDescriptor) *Container {
+func TryAddService(descriptor *ServiceDescriptor) *Container {
 	container.TryAdd(descriptor)
 	return container
 }
@@ -34,7 +34,7 @@ func ConfigureOptions[T any](f func(container *Container, v *T)) {
 }
 
 func Add[T interface{}](scope ServiceScope, creator serverCreator[T]) {
-	AddService(ServiceDescriptor{
+	AddService(&ServiceDescriptor{
 		ServiceType: getServiceType[T](),
 		Creator:     convertCreator(creator),
 		Scope:       scope,
@@ -42,7 +42,7 @@ func Add[T interface{}](scope ServiceScope, creator serverCreator[T]) {
 }
 
 func TryAdd[T interface{}](scope ServiceScope, creator serverCreator[T]) {
-	TryAddService(ServiceDescriptor{
+	TryAddService(&ServiceDescriptor{
 		ServiceType: getServiceType[T](),
 		Creator:     convertCreator(creator),
 		Scope:       scope,
@@ -94,7 +94,7 @@ func TryAddSingletonDefault[T interface{}]() {
 }
 
 func AddValue(value interface{}) {
-	AddService(ServiceDescriptor{
+	AddService(&ServiceDescriptor{
 		ServiceType: getInterfaceType(value),
 		Value:       value,
 		Scope:       Singleton,
@@ -102,26 +102,10 @@ func AddValue(value interface{}) {
 }
 
 func TryAddValue(value interface{}) {
-	TryAddService(ServiceDescriptor{
+	TryAddService(&ServiceDescriptor{
 		ServiceType: getInterfaceType(value),
 		Value:       value,
 		Scope:       Singleton,
-	})
-}
-
-func AddByType[T interface{}](serviceType reflect.Type, scope ServiceScope, creator func(*Container) *T) {
-	AddService(ServiceDescriptor{
-		ServiceType: serviceType,
-		Creator:     func(c *Container) interface{} { return creator(c) },
-		Scope:       scope,
-	})
-}
-
-func TryAddByType[T interface{}](serviceType reflect.Type, scope ServiceScope, creator func(*Container) *T) {
-	TryAddService(ServiceDescriptor{
-		ServiceType: serviceType,
-		Creator:     func(c *Container) interface{} { return creator(c) },
-		Scope:       scope,
 	})
 }
 

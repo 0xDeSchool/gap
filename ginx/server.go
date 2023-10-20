@@ -19,7 +19,8 @@ type ServerOptions struct {
 }
 
 type serverHandler struct {
-	Func gin.HandlerFunc
+	Func  gin.HandlerFunc
+	Order int
 }
 
 type Server struct {
@@ -35,11 +36,24 @@ func NewServer(g *gin.Engine, options *ServerOptions) *Server {
 	}
 }
 
-func (s *Server) Use(middleware gin.HandlerFunc) {
-	s.middlewares = append(s.middlewares, serverHandler{
-		Func: middleware,
-	})
+func (s *Server) Use(middlewares ...gin.HandlerFunc) *Server {
+	return s.UseWithOrder(0, middlewares...)
 }
+
+func (s *Server) UseBefore(middlewares ...gin.HandlerFunc) *Server {
+	return s.UseWithOrder(-1, middlewares...)
+}
+
+func (s *Server) UseWithOrder(order int, middlewares ...gin.HandlerFunc) *Server {
+	for _, m := range middlewares {
+		s.middlewares = append(s.middlewares, serverHandler{
+			Func:  m,
+			Order: order,
+		})
+	}
+	return s
+}
+
 func (s *Server) Run() error {
 	s.useDefaultHandlers()
 	for _, m := range s.middlewares {
