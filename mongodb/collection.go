@@ -212,7 +212,8 @@ func (c *Collection[TEntity, TKey]) DeleteMany(ctx context.Context, filter bson.
 	if _, ok := v.(ddd.ISoftDeleteEntity[TKey]); ok {
 		var count = 0
 		for i := range es {
-			softEntity := v.(ddd.ISoftDeleteEntity[TKey])
+			var ev any = es[i]
+			softEntity := ev.(ddd.ISoftDeleteEntity[TKey])
 			softEntity.Deleting(ctx)
 			idFilter := bson.D{{"_id", softEntity.GetId()}}
 			ct, err := c.UpdateOne(ctx, idFilter, es[i])
