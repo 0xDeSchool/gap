@@ -25,7 +25,7 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/vektah/gqlparser/v2 v2.5.10
 	github.com/yitter/idgenerator-go v1.3.3
-	go.mongodb.org/mongo-driver v1.12.1
+	go.mongodb.org/mongo-driver v1.13.1
 	golang.org/x/crypto v0.12.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )
