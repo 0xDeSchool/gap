@@ -32,6 +32,7 @@ func (t *NullableTime) UnmarshalJSON(data []byte) error {
 		if err != nil {
 			return err
 		}
+		nt.t = tt
 	}
 	*t = nt
 	return nil
@@ -63,14 +64,14 @@ func (t *NullableTime) SetNil() {
 
 func (t *NullableTime) String() string {
 	if t.nilValue {
-		return ""
+		return "nil"
 	}
 	return t.t.String()
 }
 
 func (t *NullableTime) Format(layout string) string {
 	if t.nilValue {
-		return ""
+		return "nil"
 	}
 	return t.t.Format(layout)
 }

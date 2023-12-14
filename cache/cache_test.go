@@ -32,13 +32,13 @@ func TestExists(t *testing.T) {
 func TestTimeout(t *testing.T) {
 	testKey := "test.timeout"
 	c := New(&CacheOptions{
-		LifeWindow: 10 * time.Second,
+		LifeWindow: 1 * time.Second,
 	})
 	c.Set(testKey, 10)
 	if !c.Exists(testKey) {
 		t.Fail()
 	}
-	time.Sleep(12 * time.Second)
+	time.Sleep(2 * time.Second)
 	if c.Exists(testKey) {
 		t.Fail()
 	}
