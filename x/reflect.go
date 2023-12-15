@@ -10,3 +10,8 @@ func HasField(t reflect.Type, name string) bool {
 	_, has := t.FieldByName(name)
 	return has
 }
+
+func Zero[T any]() T {
+	var res T
+	return res
+}
