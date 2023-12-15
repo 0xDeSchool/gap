@@ -89,7 +89,7 @@ func (c *Collection[TEntity, TKey]) FindOne(ctx context.Context, filter bson.D, 
 	return &v, err
 }
 
-func (c *Collection[TEntity, TKey]) GetMany(ctx context.Context, ids []string) ([]*TEntity, error) {
+func (c *Collection[TEntity, TKey]) GetMany(ctx context.Context, ids []TKey) ([]*TEntity, error) {
 	if len(ids) == 0 {
 		return make([]*TEntity, 0), nil
 	}
