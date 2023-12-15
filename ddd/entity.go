@@ -28,7 +28,7 @@ type EntityBase[TKey comparable] struct {
 	ID TKey `bson:"_id,omitempty"`
 }
 
-func (e *EntityBase[TKey]) GetId() TKey {
+func (e EntityBase[TKey]) GetId() TKey {
 	return e.ID
 }
 
