@@ -28,10 +28,6 @@ type AuditEntityBase[TKey comparable] struct {
 	CreatedAt        time.Time `bson:"createdAt"`
 }
 
-func (e *AuditEntityBase[TKey]) GetId() TKey {
-	return e.ID
-}
-
 func (e *AuditEntityBase[TKey]) Creating(ctx context.Context) {
 	if e.CreatedAt.IsZero() {
 		e.CreatedAt = time.Now()
