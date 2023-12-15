@@ -209,3 +209,25 @@ func Reduce[T any, R any](source []T, v R, reducer func(R, T) R) R {
 	}
 	return result
 }
+
+func ToPointers[T any](source []T) []*T {
+	if source == nil {
+		return nil
+	}
+	result := make([]*T, len(source))
+	for i := 0; i < len(source); i++ {
+		result[i] = &source[i]
+	}
+	return result
+}
+
+func ToSlice[T any](source []*T) []T {
+	if source == nil {
+		return nil
+	}
+	result := make([]T, len(source))
+	for i := 0; i < len(source); i++ {
+		result[i] = *source[i]
+	}
+	return result
+}
