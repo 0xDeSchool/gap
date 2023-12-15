@@ -80,6 +80,10 @@ func (p *PageAndSort) IsDesc() bool {
 	return len(p.Sort) > 0 && p.Sort[0] == '-' || p.Sort[0] == '!'
 }
 
+func IsSortDesc(sort string) bool {
+	return len(sort) > 0 && sort[0] == '-' || sort[0] == '!'
+}
+
 type PagedResult[T any] struct {
 	Total   int64 `json:"total"`
 	Data    []T   `json:"data"`

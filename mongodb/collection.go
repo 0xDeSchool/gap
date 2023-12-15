@@ -283,22 +283,7 @@ func (c *Collection[TEntity, TKey]) MergeGlobalFilter(ctx context.Context, filte
 }
 
 func (c *Collection[TEntity, TKey]) ParseSort(p *x.PageAndSort) bson.D {
-	sort := bson.D{}
-	if p.Sort != "" {
-		desc := 1
-		k := ""
-		if p.IsDesc() {
-			desc = -1
-			k = p.Sort[1:]
-		} else {
-			k = strings.TrimLeft(p.Sort, "+")
-		}
-		sort = append(sort, bson.E{Key: k, Value: desc})
-	}
-	if x.CanConvert[TEntity, ddd.CreationAuditedEntity[TKey]]() && !strings.Contains(p.Sort, "createdAt") {
-		sort = append(sort, bson.E{Key: "createdAt", Value: -1})
-	}
-	return sort
+	return ParseSort[TEntity, TKey](p.Sort)
 }
 
 func MergeFilter[T any](ctx context.Context, filter bson.D, opts *store.StoreOptions) bson.D {
@@ -310,4 +295,23 @@ func MergeFilter[T any](ctx context.Context, filter bson.D, opts *store.StoreOpt
 		}
 	}
 	return filter
+}
+
+func ParseSort[T any, TKey comparable](s string) bson.D {
+	sort := bson.D{}
+	if s != "" {
+		desc := 1
+		k := ""
+		if x.IsSortDesc(s) {
+			desc = -1
+			k = s[1:]
+		} else {
+			k = strings.TrimLeft(s, "+")
+		}
+		sort = append(sort, bson.E{Key: k, Value: desc})
+	}
+	if x.CanConvert[T, ddd.CreationAuditedEntity[TKey]]() && !strings.Contains(s, "createdAt") {
+		sort = append(sort, bson.E{Key: "createdAt", Value: -1})
+	}
+	return sort
 }
