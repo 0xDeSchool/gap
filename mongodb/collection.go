@@ -63,13 +63,18 @@ func (c *Collection[TEntity, TKey]) FindByPage(ctx context.Context, filter bson.
 
 	newOpts := []*options.FindOptions{findOptions}
 	newOpts = append(newOpts, opts...)
-	data, err := c.Find(ctx, filter, newOpts...)
-	if err != nil {
-		return nil, err
-	}
-	if p != nil && len(data) > int(p.Limit()) {
-		data = data[:p.Limit()]
-		result.HasMore = true
+	data := make([]*TEntity, 0)
+	if p.Limit() > 0 {
+		res, err := c.Find(ctx, filter, newOpts...)
+		if err != nil {
+			return nil, err
+		}
+		if p != nil && len(data) > int(p.Limit()) {
+			data = res[:p.Limit()]
+			result.HasMore = true
+		} else {
+			data = res
+		}
 	}
 	result.Data = data
 	return result, nil
