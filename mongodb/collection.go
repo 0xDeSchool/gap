@@ -69,7 +69,7 @@ func (c *Collection[TEntity, TKey]) FindByPage(ctx context.Context, filter bson.
 		if err != nil {
 			return nil, err
 		}
-		if p != nil && len(data) > int(p.Limit()) {
+		if p != nil && len(res) > int(p.Limit()) {
 			data = res[:p.Limit()]
 			result.HasMore = true
 		} else {
