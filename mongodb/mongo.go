@@ -3,7 +3,6 @@ package mongodb
 import (
 	"context"
 	"github.com/0xDeSchool/gap/app"
-	"github.com/0xDeSchool/gap/errx"
 	"github.com/0xDeSchool/gap/store"
 	"github.com/0xDeSchool/gap/x"
 	"go.mongodb.org/mongo-driver/bson"
@@ -122,59 +121,9 @@ type orderResult struct {
 }
 
 func (mr *MongoRepositoryBase[TEntity, TKey]) MaxOrder(ctx context.Context, field string, v any) float64 {
-	match := bson.D{{Key: "$match", Value: bson.D{{Key: field, Value: v}}}}
-	var groupKey any = primitive.NilObjectID
-	if field != "" {
-		groupKey = "$" + field
-	}
-	groupMax := bson.D{{Key: "$group", Value: bson.D{
-		{Key: "_id", Value: groupKey},
-		{Key: "maxOrder", Value: bson.M{"$max": "$order"}},
-	}}}
-	aggregate := bson.A{}
-	if field != "" {
-		aggregate = append(aggregate, match)
-	}
-	aggregate = append(aggregate, groupMax)
-	result, err := mr.Collection(ctx).Col().Aggregate(ctx, aggregate)
-	errx.CheckError(err)
-	results := make([]orderResult, 0)
-	errx.CheckError(result.All(ctx, &results))
-	if len(results) > 0 {
-		return results[0].MaxOrder
-	}
-	return 0
+	return mr.Collection(ctx).MaxOrder(ctx, field, v)
 }
 
 func (mr *MongoRepositoryBase[TEntity, TKey]) MaxOrderMany(ctx context.Context, field string, v any) map[any]float64 {
-	match := bson.D{{Key: "$match", Value: bson.D{{Key: field, Value: bson.M{"$in": v}}}}}
-	var groupKey any = primitive.NilObjectID
-	if field != "" {
-		groupKey = "$" + field
-	}
-	groupMax := bson.D{{Key: "$group", Value: bson.D{
-		{Key: "_id", Value: groupKey},
-		{Key: "maxOrder", Value: bson.M{"$max": "$order"}},
-	}}}
-	aggregate := bson.A{}
-	if field != "" {
-		aggregate = append(aggregate, match)
-	}
-	aggregate = append(aggregate, groupMax)
-	result, err := mr.Collection(ctx).Col().Aggregate(ctx, aggregate)
-	errx.CheckError(err)
-	var results []bson.M
-	errx.CheckError(result.All(ctx, &results))
-	data := make(map[any]float64)
-	for k := range results {
-		key := results[k]["_id"]
-		if key != nil {
-			if maxOrder, ok := results[k]["maxOrder"].(float64); ok {
-				data[key] = maxOrder
-			} else if mo, ok := results[k]["maxOrder"].(int32); ok {
-				data[key] = float64(mo)
-			}
-		}
-	}
-	return data
+	return mr.Collection(ctx).MaxOrderMany(ctx, field, v)
 }

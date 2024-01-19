@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/0xDeSchool/gap/eventbus"
 	"github.com/0xDeSchool/gap/multi_tenancy"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strings"
 
 	"github.com/0xDeSchool/gap/log"
@@ -241,6 +242,64 @@ func (c *Collection[TEntity, TKey]) DeleteMany(ctx context.Context, filter bson.
 		}
 		return int(result.DeletedCount), nil
 	}
+}
+
+func (c *Collection[TEntity, TKey]) MaxOrder(ctx context.Context, field string, v any) float64 {
+	match := bson.D{{Key: "$match", Value: bson.D{{Key: field, Value: v}}}}
+	var groupKey any = primitive.NilObjectID
+	if field != "" {
+		groupKey = "$" + field
+	}
+	groupMax := bson.D{{Key: "$group", Value: bson.D{
+		{Key: "_id", Value: groupKey},
+		{Key: "maxOrder", Value: bson.M{"$max": "$order"}},
+	}}}
+	aggregate := bson.A{}
+	if field != "" {
+		aggregate = append(aggregate, match)
+	}
+	aggregate = append(aggregate, groupMax)
+	result, err := c.Col().Aggregate(ctx, aggregate)
+	errx.CheckError(err)
+	results := make([]orderResult, 0)
+	errx.CheckError(result.All(ctx, &results))
+	if len(results) > 0 {
+		return results[0].MaxOrder
+	}
+	return 0
+}
+
+func (c *Collection[TEntity, TKey]) MaxOrderMany(ctx context.Context, field string, v any) map[any]float64 {
+	match := bson.D{{Key: "$match", Value: bson.D{{Key: field, Value: bson.M{"$in": v}}}}}
+	var groupKey any = primitive.NilObjectID
+	if field != "" {
+		groupKey = "$" + field
+	}
+	groupMax := bson.D{{Key: "$group", Value: bson.D{
+		{Key: "_id", Value: groupKey},
+		{Key: "maxOrder", Value: bson.M{"$max": "$order"}},
+	}}}
+	aggregate := bson.A{}
+	if field != "" {
+		aggregate = append(aggregate, match)
+	}
+	aggregate = append(aggregate, groupMax)
+	result, err := c.Col().Aggregate(ctx, aggregate)
+	errx.CheckError(err)
+	var results []bson.M
+	errx.CheckError(result.All(ctx, &results))
+	data := make(map[any]float64)
+	for k := range results {
+		key := results[k]["_id"]
+		if key != nil {
+			if maxOrder, ok := results[k]["maxOrder"].(float64); ok {
+				data[key] = maxOrder
+			} else if mo, ok := results[k]["maxOrder"].(int32); ok {
+				data[key] = float64(mo)
+			}
+		}
+	}
+	return data
 }
 
 func (c *Collection[TEntity, TKey]) Col() *mongo.Collection {
