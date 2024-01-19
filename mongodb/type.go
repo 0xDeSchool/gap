@@ -22,3 +22,25 @@ func IDString(id primitive.ObjectID) string {
 	}
 	return id.Hex()
 }
+
+func MustToId(id *string) primitive.ObjectID {
+	if id == nil || *id == "" {
+		errx.PanicValidatition("string id must not be empty")
+	}
+	result, err := primitive.ObjectIDFromHex(*id)
+	if err != nil {
+		errx.PanicValidatition(err.Error())
+	}
+	return result
+}
+
+func ToID(id *string) primitive.ObjectID {
+	if id == nil || *id == "" {
+		return primitive.NilObjectID
+	}
+	result, err := primitive.ObjectIDFromHex(*id)
+	if err != nil {
+		errx.PanicValidatition(err.Error())
+	}
+	return result
+}
