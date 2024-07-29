@@ -140,7 +140,7 @@ func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []*
 		return entities, nil
 	} else {
 		for i := range entities {
-			eventbus.Publish(context.Background(), eventbus.Created(&entities[i]))
+			eventbus.Publish(context.Background(), eventbus.Created(entities[i]))
 		}
 	}
 	return entities, nil
