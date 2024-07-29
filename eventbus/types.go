@@ -10,12 +10,32 @@ func Created[T any](entity *T) *EntityCreatedEvent[T] {
 	}
 }
 
+type EntityCreatingEvent[T any] struct {
+	Entity *T `json:"entity"`
+}
+
+func Creating[T any](entity *T) *EntityCreatingEvent[T] {
+	return &EntityCreatingEvent[T]{
+		Entity: entity,
+	}
+}
+
 type EntityUpdatedEvent[T any] struct {
 	Entity *T `json:"entity"`
 }
 
 func Updated[T any](entity *T) *EntityUpdatedEvent[T] {
 	return &EntityUpdatedEvent[T]{
+		Entity: entity,
+	}
+}
+
+type EntityUpdatingEvent[T any] struct {
+	Entity *T `json:"entity"`
+}
+
+func Updating[T any](entity *T) *EntityUpdatingEvent[T] {
+	return &EntityUpdatingEvent[T]{
 		Entity: entity,
 	}
 }

@@ -112,6 +112,7 @@ func (c *Collection[TEntity, TKey]) Count(ctx context.Context, filter bson.D, op
 
 func (c *Collection[TEntity, TKey]) Insert(ctx context.Context, entity *TEntity, opts ...*options.InsertOneOptions) (*TEntity, error) {
 	ddd.SetAudited[TKey](ctx, entity)
+	eventbus.Publish(ctx, eventbus.Creating(entity))
 	_, err := c.Col().InsertOne(ctx, entity, opts...)
 	if err != nil {
 		return nil, err
@@ -126,6 +127,9 @@ func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []*
 		return entities, nil
 	}
 	data := ddd.SetAuditedManyPtr[TEntity, TKey](ctx, entities)
+	for i := range entities {
+		eventbus.Publish(ctx, eventbus.Creating(entities[i]))
+	}
 	opt := options.InsertMany().SetOrdered(!ignoreErr)
 	opts = append(opts, opt)
 	result, err := c.Col().InsertMany(ctx, data, opts...)
@@ -149,6 +153,7 @@ func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []*
 func (c *Collection[TEntity, TKey]) UpdateOne(ctx context.Context, filter bson.D, entity *TEntity, opts ...*options.UpdateOptions) (int, error) {
 	filter = c.SetAllFilter(ctx, filter)
 	ddd.SetAudited[TKey](ctx, entity)
+	eventbus.Publish(ctx, eventbus.Updating(entity))
 	result, err := c.Col().UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: entity}}, opts...)
 	if err != nil {
 		return 0, err
