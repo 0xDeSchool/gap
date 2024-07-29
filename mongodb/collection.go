@@ -113,7 +113,11 @@ func (c *Collection[TEntity, TKey]) Count(ctx context.Context, filter bson.D, op
 func (c *Collection[TEntity, TKey]) Insert(ctx context.Context, entity *TEntity, opts ...*options.InsertOneOptions) (*TEntity, error) {
 	ddd.SetAudited[TKey](ctx, entity)
 	eventbus.Publish(ctx, eventbus.Creating(entity))
-	_, err := c.Col().InsertOne(ctx, entity, opts...)
+	err := eventbus.PublishLocal(ctx, eventbus.Creating(entity))
+	if err != nil {
+		return nil, err
+	}
+	_, err = c.Col().InsertOne(ctx, entity, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -128,8 +132,12 @@ func (c *Collection[TEntity, TKey]) InsertMany(ctx context.Context, entities []*
 	}
 	data := ddd.SetAuditedManyPtr[TEntity, TKey](ctx, entities)
 	for i := range entities {
-		eventbus.Publish(ctx, eventbus.Creating(entities[i]))
+		err := eventbus.PublishLocal(ctx, eventbus.Creating(entities[i]))
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	opt := options.InsertMany().SetOrdered(!ignoreErr)
 	opts = append(opts, opt)
 	result, err := c.Col().InsertMany(ctx, data, opts...)
